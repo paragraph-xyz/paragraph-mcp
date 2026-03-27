@@ -25,6 +25,9 @@ export function registerFeedTools(
         .default(false)
         .describe("Include full post content (default: false)"),
     },
+    {
+      readOnlyHint: true,
+    },
     async (params) => {
       try {
         const api = getApi();

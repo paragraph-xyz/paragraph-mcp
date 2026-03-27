@@ -28,6 +28,9 @@ export function registerPostTools(
         .default(true)
         .describe("Include full post content (default: true)"),
     },
+    {
+      readOnlyHint: true,
+    },
     async (params) => {
       const hasId = !!params.id;
       const hasSlugs = !!params.publicationSlug || !!params.postSlug;
@@ -99,6 +102,9 @@ export function registerPostTools(
         .default(false)
         .describe("Include full post content (default: false)"),
     },
+    {
+      readOnlyHint: true,
+    },
     async (params) => {
       if (params.publicationId && params.status) {
         return error(
@@ -157,6 +163,9 @@ export function registerPostTools(
         .optional()
         .describe("Send as newsletter to subscribers"),
     },
+    {
+      idempotentHint: false,
+    },
     async (params) => {
       try {
         const api = getApi();
@@ -194,6 +203,9 @@ export function registerPostTools(
         .describe("Change post status"),
       imageUrl: z.string().optional().describe("New cover image URL"),
     },
+    {
+      idempotentHint: true,
+    },
     async (params) => {
       const { id, slug, ...body } = params;
 
@@ -223,6 +235,10 @@ export function registerPostTools(
       id: z.string().min(1).optional().describe("Post ID"),
       slug: z.string().min(1).optional().describe("Post slug"),
     },
+    {
+      destructiveHint: true,
+      idempotentHint: false,
+    },
     async (params) => {
       if (params.id && params.slug) {
         return error("Provide either id or slug, not both");
@@ -248,6 +264,9 @@ export function registerPostTools(
     "Send a test newsletter email for a draft post to the publication owner. Only works for draft posts. Requires API key.",
     {
       id: z.string().min(1).describe("Post ID"),
+    },
+    {
+      idempotentHint: false,
     },
     async (params) => {
       try {

@@ -10,6 +10,9 @@ export function registerMeTools(
     "get-me",
     "Get the publication associated with the authenticated API key. Requires API key.",
     {},
+    {
+      readOnlyHint: true,
+    },
     async () => {
       try {
         const api = getApi();

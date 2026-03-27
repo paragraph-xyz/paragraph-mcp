@@ -16,7 +16,8 @@
     "paragraph-mcp": "./dist/index.js"
   },
   "files": [
-    "dist"
+    "dist",
+    "README.md"
   ],
   "publishConfig": {
     "access": "public"

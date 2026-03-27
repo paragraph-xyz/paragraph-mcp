@@ -23,6 +23,9 @@ export function registerPublicationTools(
         .optional()
         .describe("Publication custom domain (e.g. 'blog.example.com')"),
     },
+    {
+      readOnlyHint: true,
+    },
     async (params) => {
       const provided = [params.id, params.slug, params.domain].filter(
         (v) => v !== undefined

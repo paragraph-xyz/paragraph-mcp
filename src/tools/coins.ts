@@ -22,6 +22,9 @@ export function registerCoinTools(
         .optional()
         .describe("Set to true to get popular coins"),
     },
+    {
+      readOnlyHint: true,
+    },
     async (params) => {
       const hasId = params.id !== undefined;
       const hasContract = params.contractAddress !== undefined;
@@ -75,6 +78,9 @@ export function registerCoinTools(
         .optional()
         .describe("Number of holders to return"),
       cursor: z.string().optional().describe("Pagination cursor"),
+    },
+    {
+      readOnlyHint: true,
     },
     async (params) => {
       if (params.id && params.contractAddress) {

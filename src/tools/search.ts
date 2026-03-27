@@ -13,6 +13,9 @@ export function registerSearchTools(
     {
       query: z.string().min(1).describe("Search query"),
     },
+    {
+      readOnlyHint: true,
+    },
     async (params) => {
       try {
         const api = getApi();
@@ -30,6 +33,9 @@ export function registerSearchTools(
     {
       query: z.string().min(1).describe("Search query"),
     },
+    {
+      readOnlyHint: true,
+    },
     async (params) => {
       try {
         const api = getApi();
@@ -46,6 +52,9 @@ export function registerSearchTools(
     "Search for coins/tokens across the Paragraph platform",
     {
       query: z.string().min(1).describe("Search query"),
+    },
+    {
+      readOnlyHint: true,
     },
     async (params) => {
       try {

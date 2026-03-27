@@ -21,6 +21,9 @@ export function registerSubscriberTools(
         .describe("Number of subscribers to return (1-100, default: 10)"),
       cursor: z.string().optional().describe("Pagination cursor"),
     },
+    {
+      readOnlyHint: true,
+    },
     async (params) => {
       try {
         const api = getApi();
@@ -41,6 +44,9 @@ export function registerSubscriberTools(
     {
       publicationId: z.string().min(1).describe("Publication ID"),
     },
+    {
+      readOnlyHint: true,
+    },
     async (params) => {
       try {
         const api = getApi();
@@ -58,12 +64,15 @@ export function registerSubscriberTools(
     "add-subscriber",
     "Add a subscriber to your publication by email or wallet address. Requires API key.",
     {
-      email: z.string().min(1).optional().describe("Subscriber email address"),
+      email: z.string().email().optional().describe("Subscriber email address"),
       wallet: z
         .string()
         .min(1)
         .optional()
         .describe("Subscriber Ethereum wallet address"),
+    },
+    {
+      idempotentHint: true,
     },
     async (params) => {
       if (!params.email && !params.wallet) {

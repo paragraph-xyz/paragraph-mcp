@@ -18,6 +18,9 @@ export function registerUserTools(
         .optional()
         .describe("Ethereum wallet address (e.g. '0x1234...')"),
     },
+    {
+      readOnlyHint: true,
+    },
     async (params) => {
       if (params.id && params.wallet) {
         return error("Provide either id or wallet, not both");

@@ -3,3 +3,8 @@ dist/
 .yarn/
 .pnp.*
 *.tgz
+.env
+.env.*
+.DS_Store
+coverage/
+*.log
