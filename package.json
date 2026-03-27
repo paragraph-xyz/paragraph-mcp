@@ -1,0 +1,46 @@
+{
+  "name": "@paragraph-com/mcp",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "MCP server for Paragraph — expose your publication to AI agents",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/paragraph-xyz/paragraph-mcp.git"
+  },
+  "homepage": "https://github.com/paragraph-xyz/paragraph-mcp#readme",
+  "bugs": {
+    "url": "https://github.com/paragraph-xyz/paragraph-mcp/issues"
+  },
+  "license": "MIT",
+  "bin": {
+    "paragraph-mcp": "./dist/index.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "prepublishOnly": "tsup"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.12.1",
+    "@paragraph-com/sdk": "^1.4.0",
+    "zod": "^3.23.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "tsup": "^8.3.5",
+    "typescript": "^5.0.0",
+    "vitest": "^4.1.1"
+  },
+  "packageManager": "yarn@3.4.1"
+}
