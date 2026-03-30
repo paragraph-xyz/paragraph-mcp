@@ -72,6 +72,7 @@ export function registerSubscriberTools(
         .describe("Subscriber Ethereum wallet address"),
     },
     {
+      readOnlyHint: false,
       idempotentHint: true,
     },
     async (params) => {

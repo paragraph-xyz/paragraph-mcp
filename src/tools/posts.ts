@@ -164,6 +164,7 @@ export function registerPostTools(
         .describe("Send as newsletter to subscribers"),
     },
     {
+      readOnlyHint: false,
       idempotentHint: false,
     },
     async (params) => {
@@ -204,6 +205,7 @@ export function registerPostTools(
       imageUrl: z.string().optional().describe("New cover image URL"),
     },
     {
+      readOnlyHint: false,
       idempotentHint: true,
     },
     async (params) => {
@@ -266,6 +268,7 @@ export function registerPostTools(
       id: z.string().min(1).describe("Post ID"),
     },
     {
+      readOnlyHint: false,
       idempotentHint: false,
     },
     async (params) => {
