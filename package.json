@@ -1,6 +1,6 @@
 {
   "name": "@paragraph-com/mcp",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "type": "module",
   "description": "MCP server for Paragraph — expose your publication to AI agents",
   "repository": {
@@ -24,7 +24,10 @@
   },
   "scripts": {
     "build": "tsup",
+    "build:worker": "wrangler deploy --dry-run --outdir dist-worker",
     "dev": "tsup --watch",
+    "dev:worker": "wrangler dev",
+    "deploy": "wrangler deploy",
     "test": "vitest run",
     "test:watch": "vitest",
     "prepublishOnly": "tsup"
@@ -33,15 +36,19 @@
     "node": ">=18"
   },
   "dependencies": {
+    "@cloudflare/workers-oauth-provider": "^0.3.1",
     "@modelcontextprotocol/sdk": "^1.12.1",
-    "@paragraph-com/sdk": "^1.4.0",
+    "@paragraph-com/sdk": "^1.4.1",
+    "hono": "^4.12.9",
     "zod": "^3.23.0"
   },
   "devDependencies": {
+    "@cloudflare/workers-types": "^4.20250313.0",
     "@types/node": "^20.0.0",
     "tsup": "^8.3.5",
     "typescript": "^5.0.0",
-    "vitest": "^4.1.1"
+    "vitest": "^4.1.1",
+    "wrangler": "^4.0.0"
   },
   "packageManager": "yarn@3.4.1"
 }

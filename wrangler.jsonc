@@ -1,0 +1,17 @@
+{
+  "name": "paragraph-mcp",
+  "main": "src/worker.ts",
+  "compatibility_date": "2025-03-10",
+  "compatibility_flags": ["nodejs_compat"],
+
+  "kv_namespaces": [
+    { "binding": "OAUTH_KV", "id": "94a9b67c7cfc4e4199fdfca920707fea" }
+  ],
+
+  // Set via `wrangler secret put`:
+  // - COOKIE_ENCRYPTION_KEY
+
+  "observability": { "enabled": true },
+
+  "dev": { "port": 8788 }
+}

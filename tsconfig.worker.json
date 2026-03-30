@@ -3,9 +3,8 @@
     "target": "ES2022",
     "module": "ESNext",
     "lib": ["ES2022"],
+    "types": ["@cloudflare/workers-types"],
     "declaration": false,
-    "outDir": "./dist",
-    "rootDir": "./src",
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
@@ -13,6 +12,6 @@
     "resolveJsonModule": true,
     "moduleResolution": "bundler"
   },
-  "include": ["src"],
-  "exclude": ["src/__tests__", "src/worker.ts"]
+  "include": ["src/worker.ts", "src/tools"],
+  "exclude": ["src/__tests__"]
 }
