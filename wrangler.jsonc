@@ -4,6 +4,10 @@
   "compatibility_date": "2025-03-10",
   "compatibility_flags": ["nodejs_compat"],
 
+  "routes": [
+    { "pattern": "mcp.paragraph.com", "custom_domain": true }
+  ],
+
   "kv_namespaces": [
     { "binding": "OAUTH_KV", "id": "94a9b67c7cfc4e4199fdfca920707fea" }
   ],

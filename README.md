@@ -2,15 +2,69 @@
 
 MCP (Model Context Protocol) server for [Paragraph](https://paragraph.com) — expose your publication to AI agents in Claude Desktop, Cursor, VS Code Copilot, and any MCP-compatible client.
 
-## Quick Start
+## Remote server (recommended)
+
+Use the hosted server at `mcp.paragraph.com` — no installation or API key management required. You'll authenticate through your Paragraph account in the browser.
+
+### Claude Code
+
+```bash
+claude mcp add paragraph --transport http https://mcp.paragraph.com/mcp
+```
+
+### Claude Desktop
+
+Add to `claude_desktop_config.json`:
+
+```json
+{
+  "mcpServers": {
+    "paragraph": {
+      "url": "https://mcp.paragraph.com/mcp"
+    }
+  }
+}
+```
+
+### Cursor
+
+Add to `.cursor/mcp.json`:
+
+```json
+{
+  "mcpServers": {
+    "paragraph": {
+      "url": "https://mcp.paragraph.com/mcp"
+    }
+  }
+}
+```
+
+### VS Code
+
+Add to `.vscode/mcp.json`:
+
+```json
+{
+  "servers": {
+    "paragraph": {
+      "url": "https://mcp.paragraph.com/mcp"
+    }
+  }
+}
+```
+
+## Local server
+
+If you prefer to run the server locally, you can use npx. Requires Node.js 18+.
 
 ```bash
 npx @paragraph-com/mcp
 ```
 
-### Authentication
+### Authentication (local only)
 
-Set your API key via environment variable:
+The remote server handles auth automatically. For local usage, set your API key via environment variable:
 
 ```bash
 PARAGRAPH_API_KEY=your-key npx @paragraph-com/mcp
@@ -23,9 +77,18 @@ npx @paragraph-com/cli login
 npx @paragraph-com/mcp
 ```
 
-## Setup
+### Local setup by client
 
-### Claude Desktop
+<details>
+<summary>Claude Code</summary>
+
+```bash
+claude mcp add paragraph -- npx @paragraph-com/mcp
+```
+</details>
+
+<details>
+<summary>Claude Desktop</summary>
 
 Add to `claude_desktop_config.json`:
 
@@ -42,8 +105,10 @@ Add to `claude_desktop_config.json`:
   }
 }
 ```
+</details>
 
-### Cursor / VS Code
+<details>
+<summary>Cursor / VS Code</summary>
 
 Add to `.cursor/mcp.json` or `.vscode/mcp.json`:
 
@@ -60,8 +125,9 @@ Add to `.cursor/mcp.json` or `.vscode/mcp.json`:
   }
 }
 ```
+</details>
 
-### Streamable HTTP
+### Streamable HTTP (local)
 
 ```bash
 npx @paragraph-com/mcp --http --port 3100
