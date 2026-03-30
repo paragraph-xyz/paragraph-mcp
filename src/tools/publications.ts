@@ -24,6 +24,7 @@ export function registerPublicationTools(
         .describe("Publication custom domain (e.g. 'blog.example.com')"),
     },
     {
+      title: "Get publication",
       readOnlyHint: true,
     },
     async (params) => {

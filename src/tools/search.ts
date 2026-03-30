@@ -14,6 +14,7 @@ export function registerSearchTools(
       query: z.string().min(1).describe("Search query"),
     },
     {
+      title: "Search posts",
       readOnlyHint: true,
     },
     async (params) => {
@@ -34,6 +35,7 @@ export function registerSearchTools(
       query: z.string().min(1).describe("Search query"),
     },
     {
+      title: "Search publications",
       readOnlyHint: true,
     },
     async (params) => {
@@ -54,6 +56,7 @@ export function registerSearchTools(
       query: z.string().min(1).describe("Search query"),
     },
     {
+      title: "Search coins",
       readOnlyHint: true,
     },
     async (params) => {

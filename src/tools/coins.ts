@@ -23,6 +23,7 @@ export function registerCoinTools(
         .describe("Set to true to get popular coins"),
     },
     {
+      title: "Get coin",
       readOnlyHint: true,
     },
     async (params) => {
@@ -80,6 +81,7 @@ export function registerCoinTools(
       cursor: z.string().optional().describe("Pagination cursor"),
     },
     {
+      title: "List coin holders",
       readOnlyHint: true,
     },
     async (params) => {

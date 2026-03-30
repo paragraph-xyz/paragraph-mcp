@@ -19,6 +19,7 @@ export function registerUserTools(
         .describe("Ethereum wallet address (e.g. '0x1234...')"),
     },
     {
+      title: "Get user",
       readOnlyHint: true,
     },
     async (params) => {

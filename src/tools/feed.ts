@@ -26,6 +26,7 @@ export function registerFeedTools(
         .describe("Include full post content (default: false)"),
     },
     {
+      title: "Get feed",
       readOnlyHint: true,
     },
     async (params) => {

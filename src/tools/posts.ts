@@ -29,6 +29,7 @@ export function registerPostTools(
         .describe("Include full post content (default: true)"),
     },
     {
+      title: "Get post",
       readOnlyHint: true,
     },
     async (params) => {
@@ -103,6 +104,7 @@ export function registerPostTools(
         .describe("Include full post content (default: false)"),
     },
     {
+      title: "List posts",
       readOnlyHint: true,
     },
     async (params) => {
@@ -164,6 +166,7 @@ export function registerPostTools(
         .describe("Send as newsletter to subscribers"),
     },
     {
+      title: "Create post",
       readOnlyHint: false,
       idempotentHint: false,
     },
@@ -205,6 +208,7 @@ export function registerPostTools(
       imageUrl: z.string().optional().describe("New cover image URL"),
     },
     {
+      title: "Update post",
       readOnlyHint: false,
       idempotentHint: true,
     },
@@ -238,6 +242,7 @@ export function registerPostTools(
       slug: z.string().min(1).optional().describe("Post slug"),
     },
     {
+      title: "Delete post",
       destructiveHint: true,
       idempotentHint: false,
     },
@@ -268,6 +273,7 @@ export function registerPostTools(
       id: z.string().min(1).describe("Post ID"),
     },
     {
+      title: "Send test email",
       readOnlyHint: false,
       idempotentHint: false,
     },

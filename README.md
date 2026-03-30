@@ -181,6 +181,10 @@ npx @paragraph-com/mcp --toolsets posts,search
 
 Available toolsets: `posts`, `publications`, `subscribers`, `users`, `coins`, `search`, `feed`, `me`
 
+## Privacy Policy
+
+This MCP server connects to the [Paragraph](https://paragraph.com) API on your behalf. See the [Paragraph Privacy Policy](https://paragraph.com/privacy) for details on data collection, usage, storage, and your rights.
+
 ## License
 
 MIT

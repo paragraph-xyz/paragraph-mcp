@@ -11,6 +11,7 @@ export function registerMeTools(
     "Get the publication associated with the authenticated API key. Requires API key.",
     {},
     {
+      title: "Get my publication",
       readOnlyHint: true,
     },
     async () => {

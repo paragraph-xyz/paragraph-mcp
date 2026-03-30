@@ -22,6 +22,7 @@ export function registerSubscriberTools(
       cursor: z.string().optional().describe("Pagination cursor"),
     },
     {
+      title: "List subscribers",
       readOnlyHint: true,
     },
     async (params) => {
@@ -45,6 +46,7 @@ export function registerSubscriberTools(
       publicationId: z.string().min(1).describe("Publication ID"),
     },
     {
+      title: "Get subscriber count",
       readOnlyHint: true,
     },
     async (params) => {
@@ -72,6 +74,7 @@ export function registerSubscriberTools(
         .describe("Subscriber Ethereum wallet address"),
     },
     {
+      title: "Add subscriber",
       readOnlyHint: false,
       idempotentHint: true,
     },
