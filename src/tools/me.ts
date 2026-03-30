@@ -13,6 +13,7 @@ export function registerMeTools(
     {
       title: "Get my publication",
       readOnlyHint: true,
+      openWorldHint: false,
     },
     async () => {
       try {

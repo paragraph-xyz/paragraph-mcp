@@ -21,6 +21,7 @@ export function registerUserTools(
     {
       title: "Get user",
       readOnlyHint: true,
+      openWorldHint: false,
     },
     async (params) => {
       if (params.id && params.wallet) {

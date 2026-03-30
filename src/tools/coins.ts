@@ -25,6 +25,7 @@ export function registerCoinTools(
     {
       title: "Get coin",
       readOnlyHint: true,
+      openWorldHint: false,
     },
     async (params) => {
       const hasId = params.id !== undefined;
@@ -83,6 +84,7 @@ export function registerCoinTools(
     {
       title: "List coin holders",
       readOnlyHint: true,
+      openWorldHint: false,
     },
     async (params) => {
       if (params.id && params.contractAddress) {

@@ -26,6 +26,7 @@ export function registerPublicationTools(
     {
       title: "Get publication",
       readOnlyHint: true,
+      openWorldHint: false,
     },
     async (params) => {
       const provided = [params.id, params.slug, params.domain].filter(

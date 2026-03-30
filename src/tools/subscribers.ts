@@ -24,6 +24,7 @@ export function registerSubscriberTools(
     {
       title: "List subscribers",
       readOnlyHint: true,
+      openWorldHint: false,
     },
     async (params) => {
       try {
@@ -48,6 +49,7 @@ export function registerSubscriberTools(
     {
       title: "Get subscriber count",
       readOnlyHint: true,
+      openWorldHint: false,
     },
     async (params) => {
       try {
@@ -76,6 +78,7 @@ export function registerSubscriberTools(
     {
       title: "Add subscriber",
       readOnlyHint: false,
+      openWorldHint: false,
       idempotentHint: true,
     },
     async (params) => {

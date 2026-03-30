@@ -16,6 +16,7 @@ export function registerSearchTools(
     {
       title: "Search posts",
       readOnlyHint: true,
+      openWorldHint: false,
     },
     async (params) => {
       try {
@@ -37,6 +38,7 @@ export function registerSearchTools(
     {
       title: "Search publications",
       readOnlyHint: true,
+      openWorldHint: false,
     },
     async (params) => {
       try {
@@ -58,6 +60,7 @@ export function registerSearchTools(
     {
       title: "Search coins",
       readOnlyHint: true,
+      openWorldHint: false,
     },
     async (params) => {
       try {
