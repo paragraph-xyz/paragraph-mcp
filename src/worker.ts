@@ -332,28 +332,50 @@ authApp.get("/callback", async (c) => {
 
 type EnvWithOAuth = Env & { OAUTH_PROVIDER: OAuthHelpers };
 
-export default new OAuthProvider<EnvWithOAuth>({
+const oauthProvider = new OAuthProvider<EnvWithOAuth>({
   apiRoute: "/mcp",
-  apiHandler: mcpHandler as Pick<Required<ExportedHandler<EnvWithOAuth>>, "fetch">,
+  apiHandler: mcpHandler as Pick<
+    Required<ExportedHandler<EnvWithOAuth>>,
+    "fetch"
+  >,
   defaultHandler: {
-    async fetch(request: Request, env: EnvWithOAuth, ctx: ExecutionContext) {
-      const url = new URL(request.url);
-      console.log("[default] incoming request", {
-        method: request.method,
-        path: url.pathname,
-      });
-
-      const response = await authApp.fetch(request, env, ctx);
-
-      console.log("[default] response", {
-        path: url.pathname,
-        status: response.status,
-      });
-
-      return response;
+    fetch(request: Request, env: EnvWithOAuth, ctx: ExecutionContext) {
+      return authApp.fetch(request, env, ctx);
     },
   },
   authorizeEndpoint: "/authorize",
   tokenEndpoint: "/token",
   clientRegistrationEndpoint: "/register",
 });
+
+export default {
+  async fetch(
+    request: Request,
+    env: EnvWithOAuth,
+    ctx: ExecutionContext
+  ): Promise<Response> {
+    const url = new URL(request.url);
+    console.log("[worker] incoming", {
+      method: request.method,
+      path: url.pathname,
+    });
+
+    try {
+      const response = await oauthProvider.fetch(request, env, ctx);
+      console.log("[worker] response", {
+        method: request.method,
+        path: url.pathname,
+        status: response.status,
+      });
+      return response;
+    } catch (err) {
+      console.error("[worker] unhandled error", {
+        method: request.method,
+        path: url.pathname,
+        error: err instanceof Error ? err.message : String(err),
+        stack: err instanceof Error ? err.stack : undefined,
+      });
+      return new Response("Internal server error", { status: 500 });
+    }
+  },
+};
