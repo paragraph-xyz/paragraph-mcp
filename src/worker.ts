@@ -46,13 +46,6 @@ const mcpHandler = {
     env: Env,
     ctx: ExecutionContext
   ): Promise<Response> {
-    if (request.method !== "POST") {
-      console.warn("[mcp] rejected non-POST request", {
-        method: request.method,
-      });
-      return new Response("Method not allowed", { status: 405 });
-    }
-
     const props = (ctx as ExecutionContext & { props?: Props }).props;
     if (!props?.apiKey) {
       console.error("[mcp] no apiKey in OAuth props — token may be invalid");
