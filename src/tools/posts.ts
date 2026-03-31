@@ -147,7 +147,7 @@ export function registerPostTools(
 
   server.tool(
     "create-post",
-    "Create a new post in your publication. Requires API key. Content must be in markdown format.",
+    "Create a new draft post in your publication. Requires API key. Content must be in markdown format. Do not set sendNewsletter to true without explicit user approval — it emails all subscribers and cannot be undone.",
     {
       title: z.string().min(1).describe("Post title"),
       markdown: z.string().min(1).describe("Post content in markdown format"),
@@ -186,7 +186,7 @@ export function registerPostTools(
 
   server.tool(
     "update-post",
-    "Update an existing post by ID or slug. Only provided fields are updated. Requires API key.",
+    "Update an existing post by ID or slug. Only provided fields are updated. Requires API key. Setting status to 'published' makes the post publicly visible — always confirm with the user before publishing.",
     {
       id: z
         .string()
@@ -240,7 +240,7 @@ export function registerPostTools(
 
   server.tool(
     "delete-post",
-    "Permanently delete a post by ID or slug. This action is irreversible. Requires API key.",
+    "Permanently delete a post by ID or slug. This action is irreversible. Always confirm with the user before deleting. Requires API key.",
     {
       id: z.string().min(1).optional().describe("Post ID"),
       slug: z.string().min(1).optional().describe("Post slug"),
