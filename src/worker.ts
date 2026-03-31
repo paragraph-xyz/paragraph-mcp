@@ -2,12 +2,8 @@ import OAuthProvider, {
   type OAuthHelpers,
   type AuthRequest,
 } from "@cloudflare/workers-oauth-provider";
-import { createMcpHandler } from "agents/mcp";
-import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { ParagraphAPI } from "@paragraph-com/sdk";
 import { Hono } from "hono";
-import { registerTools } from "./tools/index.js";
-import { VERSION } from "./version.js";
+import { mcpHandler } from "./mcp-handler.js";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -17,10 +13,6 @@ interface Env {
   OAUTH_KV: KVNamespace;
   COOKIE_ENCRYPTION_KEY: string;
   PARAGRAPH_API_URL?: string;
-}
-
-interface Props {
-  apiKey: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -35,61 +27,6 @@ const POLL_MAX_ATTEMPTS = 120; // 3 minutes max
 function paragraphApi(env: Env) {
   return env.PARAGRAPH_API_URL?.trim() || PARAGRAPH_API;
 }
-
-// ---------------------------------------------------------------------------
-// MCP handler (stateless — new server per request)
-// ---------------------------------------------------------------------------
-
-function createParagraphMcpServer(apiKey: string) {
-  const server = new McpServer({
-    name: "Paragraph",
-    version: VERSION,
-    instructions: [
-      "You are interacting with the Paragraph publishing platform.",
-      "- Posts are created as drafts. Do not publish or send newsletters without explicit user approval.",
-      "- Publishing makes content publicly visible and may email subscribers — this cannot be undone.",
-      "- Always confirm with the user before deleting posts (deletions are irreversible).",
-      "- When displaying post content, link to the original URL on paragraph.com.",
-    ].join("\n"),
-  });
-
-  let api: ParagraphAPI | null = null;
-  const getApi = () => {
-    if (!api) {
-      api = new ParagraphAPI({ apiKey });
-    }
-    return api;
-  };
-
-  registerTools(server, getApi);
-  return server;
-}
-
-const mcpHandler = {
-  async fetch(
-    request: Request,
-    env: Env,
-    ctx: ExecutionContext
-  ): Promise<Response> {
-    const props = (ctx as ExecutionContext & { props?: Props }).props;
-    if (!props?.apiKey) {
-      console.error("[mcp] no apiKey in OAuth props — token may be invalid");
-      return new Response("Unauthorized", { status: 401 });
-    }
-
-    try {
-      const server = createParagraphMcpServer(props.apiKey);
-      const handler = createMcpHandler(server, { route: "/mcp" });
-      return await handler(request, env, ctx);
-    } catch (err) {
-      console.error("[mcp] handler error", {
-        error: err instanceof Error ? err.message : String(err),
-        stack: err instanceof Error ? err.stack : undefined,
-      });
-      return new Response("Internal server error", { status: 500 });
-    }
-  },
-};
 
 // ---------------------------------------------------------------------------
 // Auth handler (Hono app for /authorize and /callback)
@@ -312,7 +249,7 @@ authApp.get("/callback", async (c) => {
       userId: sessionId,
       metadata: {},
       scope: oauthReqInfo.scope || [],
-      props: { apiKey } satisfies Props,
+      props: { apiKey },
     });
 
     console.log("[callback] OAuth flow completed, redirecting", {
@@ -338,7 +275,7 @@ authApp.get("/callback", async (c) => {
 type EnvWithOAuth = Env & { OAUTH_PROVIDER: OAuthHelpers };
 
 const oauthProvider = new OAuthProvider<EnvWithOAuth>({
-  apiRoute: "/mcp",
+  apiRoute: ["/mcp", "/mcp/message"],
   apiHandler: mcpHandler as Pick<
     Required<ExportedHandler<EnvWithOAuth>>,
     "fetch"
@@ -359,24 +296,10 @@ export default {
     env: EnvWithOAuth,
     ctx: ExecutionContext
   ): Promise<Response> {
-    const url = new URL(request.url);
-    console.log("[worker] incoming", {
-      method: request.method,
-      path: url.pathname,
-    });
-
     try {
-      const response = await oauthProvider.fetch(request, env, ctx);
-      console.log("[worker] response", {
-        method: request.method,
-        path: url.pathname,
-        status: response.status,
-      });
-      return response;
+      return await oauthProvider.fetch(request, env, ctx);
     } catch (err) {
       console.error("[worker] unhandled error", {
-        method: request.method,
-        path: url.pathname,
         error: err instanceof Error ? err.message : String(err),
         stack: err instanceof Error ? err.stack : undefined,
       });
