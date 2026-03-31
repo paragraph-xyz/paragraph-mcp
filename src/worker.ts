@@ -45,35 +45,44 @@ const mcpHandler = {
     env: Env,
     _ctx: ExecutionContext
   ): Promise<Response> {
-    // Only POST is meaningful for stateless Streamable HTTP
     if (request.method !== "POST") {
+      console.warn("[mcp] rejected non-POST request", {
+        method: request.method,
+      });
       return new Response("Method not allowed", { status: 405 });
     }
 
-    // Extract API key from OAuth props injected by OAuthProvider
     const props = (request as Request & { props?: Props }).props;
     if (!props?.apiKey) {
+      console.error("[mcp] no apiKey in OAuth props — token may be invalid");
       return new Response("Unauthorized", { status: 401 });
     }
 
-    // Create a fresh MCP server + transport per request (stateless)
-    const server = new McpServer({ name: "Paragraph", version: "0.1.0" });
+    try {
+      const server = new McpServer({ name: "Paragraph", version: "0.1.0" });
 
-    let api: ParagraphAPI | null = null;
-    const getApi = () => {
-      if (!api) {
-        api = new ParagraphAPI({ apiKey: props.apiKey });
-      }
-      return api;
-    };
+      let api: ParagraphAPI | null = null;
+      const getApi = () => {
+        if (!api) {
+          api = new ParagraphAPI({ apiKey: props.apiKey });
+        }
+        return api;
+      };
 
-    registerTools(server, getApi);
+      registerTools(server, getApi);
 
-    const transport = new WebStandardStreamableHTTPServerTransport({
-      sessionIdGenerator: undefined, // stateless
-    });
-    await server.connect(transport);
-    return transport.handleRequest(request);
+      const transport = new WebStandardStreamableHTTPServerTransport({
+        sessionIdGenerator: undefined, // stateless
+      });
+      await server.connect(transport);
+      return transport.handleRequest(request);
+    } catch (err) {
+      console.error("[mcp] handler error", {
+        error: err instanceof Error ? err.message : String(err),
+        stack: err instanceof Error ? err.stack : undefined,
+      });
+      return new Response("Internal server error", { status: 500 });
+    }
   },
 };
 
@@ -85,6 +94,16 @@ type AuthEnv = { Bindings: Env & { OAUTH_PROVIDER: OAuthHelpers } };
 
 const authApp = new Hono<AuthEnv>();
 
+authApp.onError((err, c) => {
+  console.error("[auth] unhandled error", {
+    path: c.req.path,
+    method: c.req.method,
+    error: err.message,
+    stack: err.stack,
+  });
+  return c.text("Internal server error", 500);
+});
+
 /**
  * GET /authorize
  *
@@ -95,20 +114,35 @@ const authApp = new Hono<AuthEnv>();
  * 4. Redirect user to Paragraph's approval page
  */
 authApp.get("/authorize", async (c) => {
-  const oauthReqInfo = await c.env.OAUTH_PROVIDER.parseAuthRequest(c.req.raw);
-  if (!oauthReqInfo.clientId) {
+  console.log("[authorize] starting OAuth flow");
+
+  let oauthReqInfo: Awaited<
+    ReturnType<OAuthHelpers["parseAuthRequest"]>
+  >;
+  try {
+    oauthReqInfo = await c.env.OAUTH_PROVIDER.parseAuthRequest(c.req.raw);
+  } catch (err) {
+    console.error("[authorize] failed to parse OAuth request", {
+      error: err instanceof Error ? err.message : String(err),
+    });
     return c.text("Invalid OAuth request", 400);
   }
 
+  if (!oauthReqInfo.clientId) {
+    console.error("[authorize] missing clientId in OAuth request");
+    return c.text("Invalid OAuth request", 400);
+  }
+
+  console.log("[authorize] parsed OAuth request", {
+    clientId: oauthReqInfo.clientId,
+    responseType: oauthReqInfo.responseType,
+    redirectUri: oauthReqInfo.redirectUri,
+  });
+
   const apiBase = paragraphApi(c.env);
   const workerOrigin = new URL(c.req.url).origin;
-
-  // Create device auth session with a callbackUrl.
-  // The callbackUrl includes the Worker's /callback endpoint. Since we don't
-  // know the sessionId yet, we use a placeholder that the frontend will replace
-  // — or more simply, we include the base URL and the frontend appends the
-  // session from its own context.
   const callbackBase = `${workerOrigin}/callback`;
+
   const sessionRes = await fetch(`${apiBase}/api/v1/api/auth/sessions`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -119,6 +153,11 @@ authApp.get("/authorize", async (c) => {
   });
 
   if (!sessionRes.ok) {
+    const body = await sessionRes.text().catch(() => "");
+    console.error("[authorize] failed to create session", {
+      status: sessionRes.status,
+      body,
+    });
     return c.text("Failed to create auth session", 502);
   }
 
@@ -128,15 +167,19 @@ authApp.get("/authorize", async (c) => {
     expiresAt: string;
   };
 
-  // Store the OAuth request in KV so /callback can complete authorization
+  console.log("[authorize] session created", {
+    sessionId: session.sessionId,
+    expiresAt: session.expiresAt,
+  });
+
   await c.env.OAUTH_KV.put(
     `mcp_auth:${session.sessionId}`,
     JSON.stringify(oauthReqInfo),
-    { expirationTtl: 600 } // 10 minutes
+    { expirationTtl: 600 }
   );
 
-  // Redirect user to Paragraph's approval page
   const approvalUrl = `${PARAGRAPH_FRONTEND}/api/auth?session=${session.sessionId}`;
+  console.log("[authorize] redirecting to approval page", { approvalUrl });
 
   return c.redirect(approvalUrl);
 });
@@ -152,61 +195,135 @@ authApp.get("/authorize", async (c) => {
 authApp.get("/callback", async (c) => {
   const sessionId = c.req.query("session");
   if (!sessionId) {
+    console.error("[callback] missing session query param");
     return c.text("Missing session parameter", 400);
   }
 
-  // Retrieve stored OAuth request
+  console.log("[callback] starting", { sessionId });
+
   const stored = await c.env.OAUTH_KV.get(`mcp_auth:${sessionId}`);
   if (!stored) {
+    console.error("[callback] KV lookup failed — session expired or missing", {
+      sessionId,
+    });
     return c.text("Session expired or not found", 400);
   }
-  const oauthReqInfo = JSON.parse(stored) as AuthRequest;
 
-  // Poll Paragraph's session endpoint for the API key
+  let oauthReqInfo: AuthRequest;
+  try {
+    oauthReqInfo = JSON.parse(stored) as AuthRequest;
+  } catch (err) {
+    console.error("[callback] failed to parse stored OAuth request", {
+      sessionId,
+      error: err instanceof Error ? err.message : String(err),
+    });
+    return c.text("Corrupted session data", 500);
+  }
+
+  console.log("[callback] retrieved OAuth state from KV", {
+    sessionId,
+    clientId: oauthReqInfo.clientId,
+    redirectUri: oauthReqInfo.redirectUri,
+  });
+
   const apiBase = paragraphApi(c.env);
   let apiKey: string | null = null;
+  let lastStatus: string | null = null;
+  let lastHttpStatus: number | null = null;
+  let pollCount = 0;
 
   for (let attempt = 0; attempt < POLL_MAX_ATTEMPTS; attempt++) {
-    const res = await fetch(
-      `${apiBase}/api/v1/api/auth/sessions/${sessionId}`
-    );
-    if (!res.ok) break;
+    pollCount = attempt + 1;
+    let res: Response;
+    try {
+      res = await fetch(
+        `${apiBase}/api/v1/api/auth/sessions/${sessionId}`
+      );
+    } catch (err) {
+      console.error("[callback] fetch error during poll", {
+        sessionId,
+        attempt,
+        error: err instanceof Error ? err.message : String(err),
+      });
+      break;
+    }
+
+    lastHttpStatus = res.status;
+
+    if (!res.ok) {
+      const body = await res.text().catch(() => "");
+      console.error("[callback] non-OK response from session poll", {
+        sessionId,
+        attempt,
+        status: res.status,
+        body,
+      });
+      break;
+    }
 
     const data = (await res.json()) as {
       status: string;
       apiKey?: string;
     };
 
+    lastStatus = data.status;
+
     if (data.status === "completed" && data.apiKey) {
       apiKey = data.apiKey;
+      console.log("[callback] got API key", {
+        sessionId,
+        attempt,
+        keyPrefix: data.apiKey.slice(0, 8),
+      });
       break;
     }
 
     if (data.status === "expired") {
+      console.warn("[callback] session expired during poll", {
+        sessionId,
+        attempt,
+      });
       return c.text("Session expired. Please try again.", 400);
     }
 
-    // Wait before next poll
     await new Promise((r) => setTimeout(r, POLL_INTERVAL_MS));
   }
 
   if (!apiKey) {
+    console.error("[callback] failed to obtain API key", {
+      sessionId,
+      pollCount,
+      lastStatus,
+      lastHttpStatus,
+    });
     return c.text("Authorization timed out. Please try again.", 408);
   }
 
-  // Clean up KV
   await c.env.OAUTH_KV.delete(`mcp_auth:${sessionId}`);
 
-  // Complete the OAuth flow — this issues the token to the MCP client
-  const { redirectTo } = await c.env.OAUTH_PROVIDER.completeAuthorization({
-    request: oauthReqInfo,
-    userId: sessionId,
-    metadata: {},
-    scope: oauthReqInfo.scope || [],
-    props: { apiKey } satisfies Props,
-  });
+  try {
+    const { redirectTo } = await c.env.OAUTH_PROVIDER.completeAuthorization({
+      request: oauthReqInfo,
+      userId: sessionId,
+      metadata: {},
+      scope: oauthReqInfo.scope || [],
+      props: { apiKey } satisfies Props,
+    });
 
-  return c.redirect(redirectTo);
+    console.log("[callback] OAuth flow completed, redirecting", {
+      sessionId,
+      redirectTo: redirectTo.slice(0, 100),
+    });
+
+    return c.redirect(redirectTo);
+  } catch (err) {
+    console.error("[callback] completeAuthorization failed", {
+      sessionId,
+      error: err instanceof Error ? err.message : String(err),
+      stack: err instanceof Error ? err.stack : undefined,
+    });
+    return c.text("Failed to complete authorization. Please try again.", 500);
+  }
 });
 
 // ---------------------------------------------------------------------------
@@ -219,8 +336,21 @@ export default new OAuthProvider<EnvWithOAuth>({
   apiRoute: "/mcp",
   apiHandler: mcpHandler as Pick<Required<ExportedHandler<EnvWithOAuth>>, "fetch">,
   defaultHandler: {
-    fetch(request: Request, env: EnvWithOAuth, ctx: ExecutionContext) {
-      return authApp.fetch(request, env, ctx);
+    async fetch(request: Request, env: EnvWithOAuth, ctx: ExecutionContext) {
+      const url = new URL(request.url);
+      console.log("[default] incoming request", {
+        method: request.method,
+        path: url.pathname,
+      });
+
+      const response = await authApp.fetch(request, env, ctx);
+
+      console.log("[default] response", {
+        path: url.pathname,
+        status: response.status,
+      });
+
+      return response;
     },
   },
   authorizeEndpoint: "/authorize",
