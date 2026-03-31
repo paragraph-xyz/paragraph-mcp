@@ -2,8 +2,8 @@ import OAuthProvider, {
   type OAuthHelpers,
   type AuthRequest,
 } from "@cloudflare/workers-oauth-provider";
+import { createMcpHandler } from "agents/mcp";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { WebStandardStreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js";
 import { ParagraphAPI } from "@paragraph-com/sdk";
 import { Hono } from "hono";
 import { registerTools } from "./tools/index.js";
@@ -40,6 +40,31 @@ function paragraphApi(env: Env) {
 // MCP handler (stateless — new server per request)
 // ---------------------------------------------------------------------------
 
+function createParagraphMcpServer(apiKey: string) {
+  const server = new McpServer({
+    name: "Paragraph",
+    version: VERSION,
+    instructions: [
+      "You are interacting with the Paragraph publishing platform.",
+      "- Posts are created as drafts. Do not publish or send newsletters without explicit user approval.",
+      "- Publishing makes content publicly visible and may email subscribers — this cannot be undone.",
+      "- Always confirm with the user before deleting posts (deletions are irreversible).",
+      "- When displaying post content, link to the original URL on paragraph.com.",
+    ].join("\n"),
+  });
+
+  let api: ParagraphAPI | null = null;
+  const getApi = () => {
+    if (!api) {
+      api = new ParagraphAPI({ apiKey });
+    }
+    return api;
+  };
+
+  registerTools(server, getApi);
+  return server;
+}
+
 const mcpHandler = {
   async fetch(
     request: Request,
@@ -52,71 +77,10 @@ const mcpHandler = {
       return new Response("Unauthorized", { status: 401 });
     }
 
-    // GET opens an SSE listener for server-to-client notifications.
-    // Workers can't hold long-lived connections, so return a stream that
-    // sends keepalives and closes cleanly before the runtime kills it.
-    if (request.method === "GET") {
-      const encoder = new TextEncoder();
-      const stream = new ReadableStream({
-        start(controller) {
-          controller.enqueue(encoder.encode(":ok\n\n"));
-          // Keep the stream alive with periodic keepalives so the
-          // Workers runtime doesn't kill us and the client sees a
-          // live connection.
-          const interval = setInterval(() => {
-            try {
-              controller.enqueue(encoder.encode(":keepalive\n\n"));
-            } catch {
-              clearInterval(interval);
-            }
-          }, 5_000);
-          setTimeout(() => {
-            clearInterval(interval);
-            try { controller.close(); } catch {}
-          }, 60_000);
-        },
-      });
-      return new Response(stream, {
-        headers: {
-          "Content-Type": "text/event-stream",
-          "Cache-Control": "no-cache, no-transform",
-          Connection: "keep-alive",
-        },
-      });
-    }
-
-    if (request.method === "DELETE") {
-      return new Response(null, { status: 405 });
-    }
-
     try {
-      const server = new McpServer({
-        name: "Paragraph",
-        version: VERSION,
-        instructions: [
-          "You are interacting with the Paragraph publishing platform.",
-          "- Posts are created as drafts. Do not publish or send newsletters without explicit user approval.",
-          "- Publishing makes content publicly visible and may email subscribers — this cannot be undone.",
-          "- Always confirm with the user before deleting posts (deletions are irreversible).",
-          "- When displaying post content, link to the original URL on paragraph.com.",
-        ].join("\n"),
-      });
-
-      let api: ParagraphAPI | null = null;
-      const getApi = () => {
-        if (!api) {
-          api = new ParagraphAPI({ apiKey: props.apiKey });
-        }
-        return api;
-      };
-
-      registerTools(server, getApi);
-
-      const transport = new WebStandardStreamableHTTPServerTransport({
-        sessionIdGenerator: undefined, // stateless
-      });
-      await server.connect(transport);
-      return transport.handleRequest(request);
+      const server = createParagraphMcpServer(props.apiKey);
+      const handler = createMcpHandler(server, { route: "/mcp" });
+      return await handler(request, env, ctx);
     } catch (err) {
       console.error("[mcp] handler error", {
         error: err instanceof Error ? err.message : String(err),
