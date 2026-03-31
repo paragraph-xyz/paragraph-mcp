@@ -84,6 +84,13 @@ function createMcpServer(toolsets?: Toolset[]) {
   const server = new McpServer({
     name: "Paragraph",
     version: "0.1.0",
+    instructions: [
+      "You are interacting with the Paragraph publishing platform.",
+      "- Posts are created as drafts. Do not publish or send newsletters without explicit user approval.",
+      "- Publishing makes content publicly visible and may email subscribers — this cannot be undone.",
+      "- Always confirm with the user before deleting posts (deletions are irreversible).",
+      "- When displaying post content, link to the original URL on paragraph.com.",
+    ].join("\n"),
   });
 
   // Lazy API client — created once per server, re-uses the same key
