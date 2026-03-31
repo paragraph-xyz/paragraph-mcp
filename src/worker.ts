@@ -60,7 +60,20 @@ const mcpHandler = {
       const stream = new ReadableStream({
         start(controller) {
           controller.enqueue(encoder.encode(":ok\n\n"));
-          controller.close();
+          // Keep the stream alive with periodic keepalives so the
+          // Workers runtime doesn't kill us and the client sees a
+          // live connection.
+          const interval = setInterval(() => {
+            try {
+              controller.enqueue(encoder.encode(":keepalive\n\n"));
+            } catch {
+              clearInterval(interval);
+            }
+          }, 5_000);
+          setTimeout(() => {
+            clearInterval(interval);
+            try { controller.close(); } catch {}
+          }, 60_000);
         },
       });
       return new Response(stream, {
