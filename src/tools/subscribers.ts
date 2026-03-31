@@ -77,7 +77,7 @@ export function registerSubscriberTools(
     },
     {
       title: "Add subscriber",
-      readOnlyHint: false,
+      destructiveHint: true,
       openWorldHint: false,
       idempotentHint: true,
     },

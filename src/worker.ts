@@ -7,6 +7,7 @@ import { WebStandardStreamableHTTPServerTransport } from "@modelcontextprotocol/
 import { ParagraphAPI } from "@paragraph-com/sdk";
 import { Hono } from "hono";
 import { registerTools } from "./tools/index.js";
+import { VERSION } from "./version.js";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -61,7 +62,7 @@ const mcpHandler = {
     try {
       const server = new McpServer({
         name: "Paragraph",
-        version: "0.1.0",
+        version: VERSION,
         instructions: [
           "You are interacting with the Paragraph publishing platform.",
           "- Posts are created as drafts. Do not publish or send newsletters without explicit user approval.",

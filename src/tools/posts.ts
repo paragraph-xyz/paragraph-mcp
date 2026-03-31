@@ -169,7 +169,7 @@ export function registerPostTools(
     },
     {
       title: "Create post",
-      readOnlyHint: false,
+      destructiveHint: true,
       openWorldHint: false,
       idempotentHint: false,
     },
@@ -212,7 +212,7 @@ export function registerPostTools(
     },
     {
       title: "Update post",
-      readOnlyHint: false,
+      destructiveHint: true,
       openWorldHint: false,
       idempotentHint: true,
     },
@@ -279,7 +279,7 @@ export function registerPostTools(
     },
     {
       title: "Send test email",
-      readOnlyHint: false,
+      destructiveHint: true,
       openWorldHint: false,
       idempotentHint: false,
     },

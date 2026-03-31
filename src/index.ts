@@ -5,6 +5,7 @@ import { ParagraphAPI } from "@paragraph-com/sdk";
 import { createServer } from "http";
 import { resolveApiKey } from "./config.js";
 import { registerTools, ALL_TOOLSETS, type Toolset } from "./tools/index.js";
+import { VERSION } from "./version.js";
 
 function parseArgs() {
   const args = process.argv.slice(2);
@@ -83,7 +84,7 @@ function createMcpServer(toolsets?: Toolset[]) {
 
   const server = new McpServer({
     name: "Paragraph",
-    version: "0.1.0",
+    version: VERSION,
     instructions: [
       "You are interacting with the Paragraph publishing platform.",
       "- Posts are created as drafts. Do not publish or send newsletters without explicit user approval.",

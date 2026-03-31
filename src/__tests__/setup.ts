@@ -3,6 +3,7 @@ import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 import { vi } from "vitest";
 import { registerTools, type Toolset } from "../tools/index.js";
+import { VERSION } from "../version.js";
 
 /** Stub API — just enough to not throw when tools call through. */
 function noopApi() {
@@ -29,7 +30,7 @@ function noopApi() {
  * Creates a connected MCP client+server pair with a stubbed API.
  */
 export async function createTestClient(toolsets?: Toolset[]) {
-  const server = new McpServer({ name: "Paragraph", version: "0.1.0" });
+  const server = new McpServer({ name: "Paragraph", version: VERSION });
   registerTools(server, () => noopApi() as never, toolsets);
 
   const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();

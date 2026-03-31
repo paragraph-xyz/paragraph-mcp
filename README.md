@@ -181,6 +181,44 @@ npx @paragraph-com/mcp --toolsets posts,search
 
 Available toolsets: `posts`, `publications`, `subscribers`, `users`, `coins`, `search`, `feed`, `me`
 
+## Examples
+
+### Search and summarize posts on a topic
+
+**Prompt:** "Search for posts about onchain governance and give me a summary of the top results"
+
+The MCP server calls `search-posts` with the query. Claude receives the matching posts and synthesizes a summary of the key themes, authors, and publications.
+
+### Draft and publish a blog post
+
+**Prompt:** "Write a post titled 'Weekly Update #12' about our new token-gating feature, then publish it"
+
+The server calls `create-post` with the title and generated markdown content, creating it as a draft. After you confirm, it calls `update-post` to set the status to `published`, making it live on your publication.
+
+### Get subscriber analytics
+
+**Prompt:** "How many subscribers does my publication have? Show me the most recent ones."
+
+The server calls `get-me` to identify your publication, then `get-subscriber-count` for the total, and `list-subscribers` to return the latest subscribers with their details.
+
+### Explore the platform feed
+
+**Prompt:** "What's trending on Paragraph right now?"
+
+The server calls `get-feed` to retrieve the curated platform feed and Claude summarizes the top posts, their authors, and topics.
+
+### Manage post lifecycle
+
+**Prompt:** "Show me my drafts and send a test email for the most recent one"
+
+The server calls `list-posts` with `status: draft` to retrieve your drafts, then `send-test-email` with the latest draft's ID so you can preview the newsletter in your inbox before sending it to subscribers.
+
+## Support
+
+- **Issues & bugs:** [GitHub Issues](https://github.com/paragraph-xyz/paragraph-mcp/issues)
+- **Email:** support@paragraph.com
+- **Website:** [paragraph.com](https://paragraph.com)
+
 ## Privacy Policy
 
 This MCP server connects to the [Paragraph](https://paragraph.com) API on your behalf. See the [Paragraph Privacy Policy](https://paragraph.com/privacy) for details on data collection, usage, storage, and your rights.
