@@ -60,6 +60,7 @@ const mcpHandler = {
       const stream = new ReadableStream({
         start(controller) {
           controller.enqueue(encoder.encode(":ok\n\n"));
+          controller.close();
         },
       });
       return new Response(stream, {
