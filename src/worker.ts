@@ -52,6 +52,29 @@ const mcpHandler = {
       return new Response("Unauthorized", { status: 401 });
     }
 
+    // GET opens an SSE listener for server-to-client notifications.
+    // Workers can't hold long-lived connections, so return a stream that
+    // sends keepalives and closes cleanly before the runtime kills it.
+    if (request.method === "GET") {
+      const encoder = new TextEncoder();
+      const stream = new ReadableStream({
+        start(controller) {
+          controller.enqueue(encoder.encode(":ok\n\n"));
+        },
+      });
+      return new Response(stream, {
+        headers: {
+          "Content-Type": "text/event-stream",
+          "Cache-Control": "no-cache, no-transform",
+          Connection: "keep-alive",
+        },
+      });
+    }
+
+    if (request.method === "DELETE") {
+      return new Response(null, { status: 405 });
+    }
+
     try {
       const server = new McpServer({
         name: "Paragraph",
