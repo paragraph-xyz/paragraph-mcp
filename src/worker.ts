@@ -43,7 +43,7 @@ const mcpHandler = {
   async fetch(
     request: Request,
     env: Env,
-    _ctx: ExecutionContext
+    ctx: ExecutionContext
   ): Promise<Response> {
     if (request.method !== "POST") {
       console.warn("[mcp] rejected non-POST request", {
@@ -52,7 +52,7 @@ const mcpHandler = {
       return new Response("Method not allowed", { status: 405 });
     }
 
-    const props = (request as Request & { props?: Props }).props;
+    const props = (ctx as ExecutionContext & { props?: Props }).props;
     if (!props?.apiKey) {
       console.error("[mcp] no apiKey in OAuth props — token may be invalid");
       return new Response("Unauthorized", { status: 401 });
