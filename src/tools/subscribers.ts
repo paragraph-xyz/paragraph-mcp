@@ -18,7 +18,7 @@ export function registerSubscriberTools(
         .max(100)
         .optional()
         .default(10)
-        .describe("Number of subscribers to return (1-100, default: 10)"),
+        .describe("Number of subscribers to return (1-100, default: 10). Keep this small to avoid oversized responses — use pagination to retrieve more."),
       cursor: z.string().optional().describe("Pagination cursor"),
     },
     {

@@ -77,7 +77,7 @@ export function registerPostTools(
 
   server.tool(
     "list-posts",
-    "List posts from a publication by publication ID, or list your own posts (requires API key). Supports pagination and status filtering.",
+    "List posts from a publication by publication ID, or list your own posts (requires API key). Supports pagination and status filtering. Tip: if you only need the total count, set limit to 1 — the response includes pagination.total. Start with a small limit and increase only if needed, as large limits may produce oversized responses.",
     {
       publicationId: z
         .string()
@@ -96,7 +96,7 @@ export function registerPostTools(
         .min(1)
         .optional()
         .default(10)
-        .describe("Number of posts to return (default: 10)"),
+        .describe("Number of posts to return (default: 10). Keep this small to avoid oversized responses — use pagination to retrieve more."),
       cursor: z.string().optional().describe("Pagination cursor"),
       includeContent: z
         .boolean()

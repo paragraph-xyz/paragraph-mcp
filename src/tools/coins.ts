@@ -78,7 +78,7 @@ export function registerCoinTools(
         .int()
         .min(1)
         .optional()
-        .describe("Number of holders to return"),
+        .describe("Number of holders to return. Keep this small to avoid oversized responses — use pagination to retrieve more."),
       cursor: z.string().optional().describe("Pagination cursor"),
     },
     {

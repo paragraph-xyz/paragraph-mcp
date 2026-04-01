@@ -17,7 +17,7 @@ export function registerFeedTools(
         .min(1)
         .optional()
         .default(10)
-        .describe("Number of feed items to return (default: 10)"),
+        .describe("Number of feed items to return (default: 10). Keep this small to avoid oversized responses — use pagination to retrieve more."),
       cursor: z.string().optional().describe("Pagination cursor"),
       includeContent: z
         .boolean()
