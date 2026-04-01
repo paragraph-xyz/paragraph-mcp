@@ -1,7 +1,7 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { ParagraphAPI } from "@paragraph-com/sdk";
-import { error, json } from "./helpers.js";
+import { error, json, stripHeavyContent } from "./helpers.js";
 
 export function registerPostTools(
   server: McpServer,
@@ -26,7 +26,7 @@ export function registerPostTools(
         .boolean()
         .optional()
         .default(true)
-        .describe("Include full post content (default: true)"),
+        .describe("Include post content as markdown (default: true)"),
     },
     {
       title: "Get post",
@@ -56,7 +56,7 @@ export function registerPostTools(
           const post = await api.posts
             .get({ id: params.id }, { includeContent: params.includeContent })
             .single();
-          return json(post);
+          return json(stripHeavyContent(post));
         }
 
         const post = await api.posts
@@ -68,7 +68,7 @@ export function registerPostTools(
             { includeContent: params.includeContent }
           )
           .single();
-        return json(post);
+        return json(stripHeavyContent(post));
       } catch (err) {
         return error(String(err instanceof Error ? err.message : err));
       }
@@ -102,7 +102,7 @@ export function registerPostTools(
         .boolean()
         .optional()
         .default(false)
-        .describe("Include full post content (default: false)"),
+        .describe("Include post content as markdown (default: false)"),
     },
     {
       title: "List posts",
@@ -128,7 +128,7 @@ export function registerPostTools(
               includeContent: params.includeContent,
             }
           );
-          return json({ posts: items, pagination });
+          return json({ posts: items.map(stripHeavyContent), pagination });
         }
 
         // List own posts (requires API key)
@@ -138,7 +138,7 @@ export function registerPostTools(
           cursor: params.cursor,
           includeContent: params.includeContent,
         });
-        return json({ posts: items, pagination });
+        return json({ posts: items.map(stripHeavyContent), pagination });
       } catch (err) {
         return error(String(err instanceof Error ? err.message : err));
       }

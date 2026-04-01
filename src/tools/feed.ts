@@ -1,7 +1,7 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { ParagraphAPI } from "@paragraph-com/sdk";
-import { error, json } from "./helpers.js";
+import { error, json, stripHeavyContent } from "./helpers.js";
 
 export function registerFeedTools(
   server: McpServer,
@@ -23,7 +23,7 @@ export function registerFeedTools(
         .boolean()
         .optional()
         .default(false)
-        .describe("Include full post content (default: false)"),
+        .describe("Include post content as markdown (default: false)"),
     },
     {
       title: "Get feed",
@@ -38,7 +38,10 @@ export function registerFeedTools(
           cursor: params.cursor,
           includeContent: params.includeContent,
         });
-        return json({ items, pagination });
+        const stripped = items.map((item: Record<string, unknown>) =>
+          item.post ? { ...item, post: stripHeavyContent(item.post) } : item
+        );
+        return json({ items: stripped, pagination });
       } catch (err) {
         return error(String(err instanceof Error ? err.message : err));
       }
