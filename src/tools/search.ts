@@ -1,6 +1,10 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { z } from "zod";
-import { ParagraphAPI } from "@paragraph-com/sdk";
+import {
+  ParagraphAPI,
+  searchPostsQueryParams,
+  searchBlogsQueryParams,
+  searchCoinsQueryParams,
+} from "@paragraph-com/sdk";
 import { error, json } from "./helpers.js";
 
 export function registerSearchTools(
@@ -11,7 +15,7 @@ export function registerSearchTools(
     "search-posts",
     "Search for posts across the Paragraph platform",
     {
-      query: z.string().min(1).describe("Search query"),
+      query: searchPostsQueryParams.shape.q.unwrap().describe("Search query"),
     },
     {
       title: "Search posts",
@@ -33,7 +37,7 @@ export function registerSearchTools(
     "search-blogs",
     "Search for publications/blogs across the Paragraph platform",
     {
-      query: z.string().min(1).describe("Search query"),
+      query: searchBlogsQueryParams.shape.q.unwrap().describe("Search query"),
     },
     {
       title: "Search publications",
@@ -55,7 +59,7 @@ export function registerSearchTools(
     "search-coins",
     "Search for coins/tokens across the Paragraph platform",
     {
-      query: z.string().min(1).describe("Search query"),
+      query: searchCoinsQueryParams.shape.q.unwrap().describe("Search query"),
     },
     {
       title: "Search coins",

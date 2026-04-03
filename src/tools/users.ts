@@ -1,6 +1,9 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { z } from "zod";
-import { ParagraphAPI } from "@paragraph-com/sdk";
+import {
+  ParagraphAPI,
+  getUserParams,
+  getUserByWalletParams,
+} from "@paragraph-com/sdk";
 import { error, json } from "./helpers.js";
 
 export function registerUserTools(
@@ -11,10 +14,8 @@ export function registerUserTools(
     "get-user",
     "Get user profile by ID or Ethereum wallet address",
     {
-      id: z.string().min(1).optional().describe("User ID"),
-      wallet: z
-        .string()
-        .min(1)
+      id: getUserParams.shape.userId.optional().describe("User ID"),
+      wallet: getUserByWalletParams.shape.walletAddress
         .optional()
         .describe("Ethereum wallet address (e.g. '0x1234...')"),
     },

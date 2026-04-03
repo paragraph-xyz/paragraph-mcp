@@ -1,6 +1,10 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { z } from "zod";
-import { ParagraphAPI } from "@paragraph-com/sdk";
+import {
+  ParagraphAPI,
+  getPublicationByIdParams,
+  getPublicationBySlugParams,
+  getPublicationByDomainParams,
+} from "@paragraph-com/sdk";
 import { error, json } from "./helpers.js";
 
 export function registerPublicationTools(
@@ -11,17 +15,9 @@ export function registerPublicationTools(
     "get-publication",
     "Get metadata about a Paragraph publication by ID, slug, or custom domain",
     {
-      id: z.string().min(1).optional().describe("Publication ID"),
-      slug: z
-        .string()
-        .min(1)
-        .optional()
-        .describe("Publication slug (e.g. '@myblog')"),
-      domain: z
-        .string()
-        .min(1)
-        .optional()
-        .describe("Publication custom domain (e.g. 'blog.example.com')"),
+      id: getPublicationByIdParams.shape.publicationId.optional(),
+      slug: getPublicationBySlugParams.shape.slug.optional(),
+      domain: getPublicationByDomainParams.shape.domain.optional(),
     },
     {
       title: "Get publication",

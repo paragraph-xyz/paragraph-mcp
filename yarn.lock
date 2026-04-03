@@ -1162,7 +1162,7 @@ __metadata:
     "@cloudflare/workers-oauth-provider": ^0.3.1
     "@cloudflare/workers-types": ^4.20250313.0
     "@modelcontextprotocol/sdk": ^1.12.1
-    "@paragraph-com/sdk": ^1.4.1
+    "@paragraph-com/sdk": ^1.5.0
     "@types/node": ^20.0.0
     agents: ^0.8.7
     hono: ^4.12.9
@@ -1176,13 +1176,18 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@paragraph-com/sdk@npm:^1.4.1":
-  version: 1.4.1
-  resolution: "@paragraph-com/sdk@npm:1.4.1"
+"@paragraph-com/sdk@npm:^1.5.0":
+  version: 1.5.0
+  resolution: "@paragraph-com/sdk@npm:1.5.0"
   dependencies:
     axios: ^1.7.7
     viem: ^2.40.3
-  checksum: 008d538eec35deeafcf595fb965d5d37a6867a6a8ec6064af6db35060f7f8e62cf85f5ef193545fa84cb589a20ff437c6cf84b9ac35fe180097cc5226de8b430
+  peerDependencies:
+    zod: ^3.0.0
+  peerDependenciesMeta:
+    zod:
+      optional: true
+  checksum: 603538e73b1fc783bcd3820f7a38036a313df575de9fdd600396bcb3613067595d22acb108f47751939ecdfdc4f009b4acc7bcd49ea4d692261db9cf22ae79d8
   languageName: node
   linkType: hard
 

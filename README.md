@@ -219,6 +219,16 @@ The server calls `list-posts` with `status: draft` to retrieve your drafts, then
 - **Email:** support@paragraph.com
 - **Website:** [paragraph.com](https://paragraph.com)
 
+## Releasing
+
+```bash
+npm run release patch   # 1.0.0 → 1.0.1
+npm run release minor   # 1.0.0 → 1.1.0
+npm run release major   # 1.0.0 → 2.0.0
+```
+
+Builds, tests, publishes to npm, deploys the Cloudflare Worker at `mcp.paragraph.com`, and creates a GitHub release. The script will prompt for any missing credentials.
+
 ## Privacy Policy
 
 This MCP server connects to the [Paragraph](https://paragraph.com) API on your behalf. See the [Paragraph Privacy Policy](https://paragraph.com/privacy) for details on data collection, usage, storage, and your rights.

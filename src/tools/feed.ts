@@ -1,6 +1,8 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { z } from "zod";
-import { ParagraphAPI } from "@paragraph-com/sdk";
+import {
+  ParagraphAPI,
+  getPostsFeedQueryParams,
+} from "@paragraph-com/sdk";
 import { error, json, stripHeavyContent } from "./helpers.js";
 
 export function registerFeedTools(
@@ -11,17 +13,12 @@ export function registerFeedTools(
     "get-feed",
     "Get the curated feed of posts from across the Paragraph platform",
     {
-      limit: z
-        .number()
-        .int()
-        .min(1)
-        .optional()
-        .default(10)
-        .describe("Number of feed items to return (default: 10). Keep this small to avoid oversized responses — use pagination to retrieve more."),
-      cursor: z.string().optional().describe("Pagination cursor"),
-      includeContent: z
-        .boolean()
-        .optional()
+      limit: getPostsFeedQueryParams.shape.limit.describe(
+        "Number of feed items to return (default: 10). Keep this small to avoid oversized responses — use pagination to retrieve more."
+      ),
+      cursor: getPostsFeedQueryParams.shape.cursor,
+      includeContent: getPostsFeedQueryParams.shape.includeContent
+        .unwrap()
         .default(false)
         .describe("Include post content as markdown (default: false)"),
     },

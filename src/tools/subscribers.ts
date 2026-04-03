@@ -1,6 +1,10 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { z } from "zod";
-import { ParagraphAPI } from "@paragraph-com/sdk";
+import {
+  ParagraphAPI,
+  listSubscribersQueryParams,
+  getSubscriberCountParams,
+  addSubscriberBody,
+} from "@paragraph-com/sdk";
 import { error, json } from "./helpers.js";
 
 export function registerSubscriberTools(
@@ -11,15 +15,10 @@ export function registerSubscriberTools(
     "list-subscribers",
     "List subscribers for your publication with pagination. Requires API key.",
     {
-      limit: z
-        .number()
-        .int()
-        .min(1)
-        .max(100)
-        .optional()
-        .default(10)
-        .describe("Number of subscribers to return (1-100, default: 10). Keep this small to avoid oversized responses — use pagination to retrieve more."),
-      cursor: z.string().optional().describe("Pagination cursor"),
+      limit: listSubscribersQueryParams.shape.limit.describe(
+        "Number of subscribers to return (1-100, default: 10). Keep this small to avoid oversized responses — use pagination to retrieve more."
+      ),
+      cursor: listSubscribersQueryParams.shape.cursor,
     },
     {
       title: "List subscribers",
@@ -44,7 +43,7 @@ export function registerSubscriberTools(
     "get-subscriber-count",
     "Get total subscriber count for a publication",
     {
-      publicationId: z.string().min(1).describe("Publication ID"),
+      publicationId: getSubscriberCountParams.shape.publicationId,
     },
     {
       title: "Get subscriber count",
@@ -68,12 +67,8 @@ export function registerSubscriberTools(
     "add-subscriber",
     "Add a subscriber to your publication by email or wallet address. Requires API key.",
     {
-      email: z.string().email().optional().describe("Subscriber email address"),
-      wallet: z
-        .string()
-        .min(1)
-        .optional()
-        .describe("Subscriber Ethereum wallet address"),
+      email: addSubscriberBody.shape.email,
+      wallet: addSubscriberBody.shape.wallet,
     },
     {
       title: "Add subscriber",

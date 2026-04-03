@@ -1,6 +1,17 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import {
+  ParagraphAPI,
+  getPostByIdParams,
+  getPostByIdQueryParams,
+  getPostByPublicationSlugAndPostSlugParams,
+  getPostsParams,
+  getPostsQueryParams,
+  listOwnPostsQueryParams,
+  createPostBody,
+  updatePostBody,
+  sendTestEmailParams,
+} from "@paragraph-com/sdk";
 import { z } from "zod";
-import { ParagraphAPI } from "@paragraph-com/sdk";
 import { error, json, stripHeavyContent } from "./helpers.js";
 
 export function registerPostTools(
@@ -11,20 +22,15 @@ export function registerPostTools(
     "get-post",
     "Get a single post by ID, or by publication slug + post slug",
     {
-      id: z.string().min(1).optional().describe("Post ID"),
-      publicationSlug: z
-        .string()
-        .min(1)
+      id: getPostByIdParams.shape.postId.optional().describe("Post ID"),
+      publicationSlug: getPostByPublicationSlugAndPostSlugParams.shape.publicationSlug
         .optional()
         .describe("Publication slug (use with postSlug)"),
-      postSlug: z
-        .string()
-        .min(1)
+      postSlug: getPostByPublicationSlugAndPostSlugParams.shape.postSlug
         .optional()
         .describe("Post slug (use with publicationSlug)"),
-      includeContent: z
-        .boolean()
-        .optional()
+      includeContent: getPostByIdQueryParams.shape.includeContent
+        .unwrap()
         .default(true)
         .describe("Include post content as markdown (default: true)"),
     },
@@ -79,28 +85,19 @@ export function registerPostTools(
     "list-posts",
     "List posts from a publication by publication ID, or list your own posts (requires API key). Supports pagination and status filtering. Tip: if you only need the total count, set limit to 1 — the response includes pagination.total. Start with a small limit and increase only if needed, as large limits may produce oversized responses.",
     {
-      publicationId: z
-        .string()
-        .min(1)
-        .optional()
+      publicationId: getPostsParams.shape.publicationId.optional().describe(
+        "Publication ID to list posts from. Omit to list your own posts (requires API key)."
+      ),
+      status: listOwnPostsQueryParams.shape.status.describe(
+        "Filter by status (only for own posts)"
+      ),
+      limit: getPostsQueryParams.shape.limit
         .describe(
-          "Publication ID to list posts from. Omit to list your own posts (requires API key)."
+          "Number of posts to return (default: 10). Keep this small to avoid oversized responses — use pagination to retrieve more."
         ),
-      status: z
-        .enum(["published", "draft"])
-        .optional()
-        .describe("Filter by status (only for own posts)"),
-      limit: z
-        .number()
-        .int()
-        .min(1)
-        .optional()
-        .default(10)
-        .describe("Number of posts to return (default: 10). Keep this small to avoid oversized responses — use pagination to retrieve more."),
-      cursor: z.string().optional().describe("Pagination cursor"),
-      includeContent: z
-        .boolean()
-        .optional()
+      cursor: getPostsQueryParams.shape.cursor,
+      includeContent: getPostsQueryParams.shape.includeContent
+        .unwrap()
         .default(false)
         .describe("Include post content as markdown (default: false)"),
     },
@@ -131,9 +128,8 @@ export function registerPostTools(
           return json({ posts: items.map(stripHeavyContent), pagination });
         }
 
-        // List own posts (requires API key)
         const { items, pagination } = await api.posts.list({
-          status: params.status,
+          status: params.status as "published" | "draft" | undefined,
           limit: params.limit,
           cursor: params.cursor,
           includeContent: params.includeContent,
@@ -149,23 +145,14 @@ export function registerPostTools(
     "create-post",
     "Create a new draft post in your publication. Requires API key. Content must be in markdown format. Do not set sendNewsletter to true without explicit user approval — it emails all subscribers and cannot be undone.",
     {
-      title: z.string().min(1).describe("Post title"),
-      markdown: z.string().min(1).describe("Post content in markdown format"),
-      subtitle: z.string().optional().describe("Post subtitle"),
-      slug: z.string().optional().describe("Custom URL slug for the post"),
-      imageUrl: z.string().optional().describe("Cover image URL"),
-      postPreview: z
-        .string()
-        .optional()
-        .describe("Preview text shown in feeds"),
-      categories: z
-        .array(z.string())
-        .optional()
-        .describe("Post tags/categories"),
-      sendNewsletter: z
-        .boolean()
-        .optional()
-        .describe("Send as newsletter to subscribers"),
+      title: createPostBody.shape.title.describe("Post title"),
+      markdown: createPostBody.shape.markdown.describe("Post content in markdown format"),
+      subtitle: createPostBody.shape.subtitle,
+      slug: createPostBody.shape.slug,
+      imageUrl: createPostBody.shape.imageUrl,
+      postPreview: createPostBody.shape.postPreview,
+      categories: createPostBody.shape.categories,
+      sendNewsletter: createPostBody.shape.sendNewsletter,
     },
     {
       title: "Create post",
@@ -188,27 +175,14 @@ export function registerPostTools(
     "update-post",
     "Update an existing post by ID or slug. Only provided fields are updated. Requires API key. Setting status to 'published' makes the post publicly visible — always confirm with the user before publishing.",
     {
-      id: z
-        .string()
-        .min(1)
-        .optional()
-        .describe("Post ID (use id or slug, not both)"),
-      slug: z
-        .string()
-        .min(1)
-        .optional()
-        .describe("Post slug (use id or slug, not both)"),
-      title: z.string().optional().describe("New title"),
-      markdown: z
-        .string()
-        .optional()
-        .describe("New content in markdown format"),
-      subtitle: z.string().optional().describe("New subtitle"),
-      status: z
-        .enum(["published", "draft", "archived"])
-        .optional()
-        .describe("Change post status"),
-      imageUrl: z.string().optional().describe("New cover image URL"),
+      id: z.string().min(1).optional().describe("Post ID (use id or slug, not both)"),
+      slug: z.string().min(1).optional().describe("Post slug (use id or slug, not both)"),
+      title: updatePostBody.shape.title,
+      markdown: updatePostBody.shape.markdown,
+      subtitle: updatePostBody.shape.subtitle,
+      status: updatePostBody.shape.status,
+      postPreview: updatePostBody.shape.postPreview,
+      categories: updatePostBody.shape.categories,
     },
     {
       title: "Update post",
@@ -275,7 +249,7 @@ export function registerPostTools(
     "send-test-email",
     "Send a test newsletter email for a draft post to the publication owner. Only works for draft posts. Requires API key.",
     {
-      id: z.string().min(1).describe("Post ID"),
+      id: sendTestEmailParams.shape.postId.describe("Post ID"),
     },
     {
       title: "Send test email",

@@ -1,6 +1,13 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
-import { ParagraphAPI } from "@paragraph-com/sdk";
+import {
+  ParagraphAPI,
+  getCoinParams,
+  getCoinByContractParams,
+  getCoinHoldersByIdParams,
+  getCoinHoldersByIdQueryParams,
+  getCoinHoldersByContractParams,
+} from "@paragraph-com/sdk";
 import { error, json } from "./helpers.js";
 
 export function registerCoinTools(
@@ -11,10 +18,8 @@ export function registerCoinTools(
     "get-coin",
     "Get coin/token metadata by ID or contract address, or list popular coins",
     {
-      id: z.string().min(1).optional().describe("Coin ID"),
-      contractAddress: z
-        .string()
-        .min(1)
+      id: getCoinParams.shape.id.optional().describe("Coin ID"),
+      contractAddress: getCoinByContractParams.shape.contractAddress
         .optional()
         .describe("On-chain contract address"),
       popular: z
@@ -67,19 +72,14 @@ export function registerCoinTools(
     "list-coin-holders",
     "Get a paginated list of holders for a coin by ID or contract address",
     {
-      id: z.string().min(1).optional().describe("Coin ID"),
-      contractAddress: z
-        .string()
-        .min(1)
+      id: getCoinHoldersByIdParams.shape.id.optional().describe("Coin ID"),
+      contractAddress: getCoinHoldersByContractParams.shape.contractAddress
         .optional()
         .describe("On-chain contract address"),
-      limit: z
-        .number()
-        .int()
-        .min(1)
-        .optional()
-        .describe("Number of holders to return. Keep this small to avoid oversized responses — use pagination to retrieve more."),
-      cursor: z.string().optional().describe("Pagination cursor"),
+      limit: getCoinHoldersByIdQueryParams.shape.limit.describe(
+        "Number of holders to return. Keep this small to avoid oversized responses — use pagination to retrieve more."
+      ),
+      cursor: getCoinHoldersByIdQueryParams.shape.cursor,
     },
     {
       title: "List coin holders",
