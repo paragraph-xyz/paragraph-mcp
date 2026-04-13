@@ -143,7 +143,7 @@ export function registerPostTools(
 
   server.tool(
     "create-post",
-    "Create a new draft post in your publication. Requires API key. Content must be in markdown format. Do not set sendNewsletter to true without explicit user approval — it emails all subscribers and cannot be undone.",
+    "Create a post in your publication. Defaults to a draft — set status to 'published' only with explicit user approval, as this makes the post publicly visible. Requires API key. Content must be in markdown format. Do not set sendNewsletter to true without explicit user approval — it emails all subscribers and cannot be undone.",
     {
       title: createPostBody.shape.title.describe("Post title"),
       markdown: createPostBody.shape.markdown.describe("Post content in markdown format"),
@@ -153,6 +153,12 @@ export function registerPostTools(
       postPreview: createPostBody.shape.postPreview,
       categories: createPostBody.shape.categories,
       sendNewsletter: createPostBody.shape.sendNewsletter,
+      status: createPostBody.shape.status
+        .unwrap()
+        .default("draft")
+        .describe(
+          "Post status. Defaults to 'draft'. Only set to 'published' with explicit user approval."
+        ),
     },
     {
       title: "Create post",
