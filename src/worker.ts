@@ -24,6 +24,15 @@ const PARAGRAPH_FRONTEND = "https://paragraph.com";
 const POLL_INTERVAL_MS = 1500;
 const POLL_MAX_ATTEMPTS = 120; // 3 minutes max
 
+const MCP_ROUTES = ["/mcp", "/mcp/message"];
+
+function extractDirectApiKey(request: Request): string | null {
+  const authHeader = request.headers.get("Authorization");
+  if (!authHeader) return null;
+  const match = authHeader.match(/^Bearer\s+(para_.+)$/i);
+  return match ? match[1] : null;
+
+}
 function paragraphApi(env: Env) {
   return env.PARAGRAPH_API_URL?.trim() || PARAGRAPH_API;
 }
@@ -297,6 +306,16 @@ export default {
     ctx: ExecutionContext
   ): Promise<Response> {
     try {
+      const url = new URL(request.url);
+      const apiKey = MCP_ROUTES.includes(url.pathname)
+        ? extractDirectApiKey(request)
+        : null;
+
+      if (apiKey) {
+        const ctxWithProps = Object.assign(ctx, { props: { apiKey } });
+        return await mcpHandler.fetch(request, env, ctxWithProps);
+      }
+
       return await oauthProvider.fetch(request, env, ctx);
     } catch (err) {
       console.error("[worker] unhandled error", {
