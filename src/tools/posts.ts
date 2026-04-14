@@ -143,7 +143,7 @@ export function registerPostTools(
 
   server.tool(
     "create-post",
-    "Create a post in your publication. Defaults to a draft — set status to 'published' only with explicit user approval, as this makes the post publicly visible. Requires API key. Content must be in markdown format. Do not set sendNewsletter to true without explicit user approval — it emails all subscribers and cannot be undone.",
+    "Create a post in your publication. Defaults to a draft — set status to 'published' only with explicit user approval, as this makes the post publicly visible. Set scheduledAt to a future Unix ms timestamp to schedule first-publish — confirm with the user before scheduling, as the post will be published automatically at the scheduled time. Requires API key. Content must be in markdown format. Do not set sendNewsletter to true without explicit user approval — it emails all subscribers and cannot be undone.",
     {
       title: createPostBody.shape.title.describe("Post title"),
       markdown: createPostBody.shape.markdown.describe("Post content in markdown format"),
@@ -153,6 +153,7 @@ export function registerPostTools(
       postPreview: createPostBody.shape.postPreview,
       categories: createPostBody.shape.categories,
       sendNewsletter: createPostBody.shape.sendNewsletter,
+      scheduledAt: createPostBody.shape.scheduledAt,
       status: createPostBody.shape.status
         .unwrap()
         .default("draft")
@@ -179,7 +180,7 @@ export function registerPostTools(
 
   server.tool(
     "update-post",
-    "Update an existing post by ID or slug. Only provided fields are updated. Requires API key. Setting status to 'published' makes the post publicly visible — always confirm with the user before publishing.",
+    "Update an existing post by ID or slug. Only provided fields are updated. Requires API key. Setting status to 'published' makes the post publicly visible — always confirm with the user before publishing. Set scheduledAt to a future Unix ms timestamp to schedule first-publish (confirm with the user first — the post will publish automatically at the scheduled time); pass scheduledAt: null to cancel.",
     {
       id: z.string().min(1).optional().describe("Post ID (use id or slug, not both)"),
       slug: z.string().min(1).optional().describe("Post slug (use id or slug, not both)"),
@@ -187,6 +188,8 @@ export function registerPostTools(
       markdown: updatePostBody.shape.markdown,
       subtitle: updatePostBody.shape.subtitle,
       status: updatePostBody.shape.status,
+      scheduledAt: updatePostBody.shape.scheduledAt,
+      sendNewsletter: updatePostBody.shape.sendNewsletter,
       postPreview: updatePostBody.shape.postPreview,
       categories: updatePostBody.shape.categories,
     },
