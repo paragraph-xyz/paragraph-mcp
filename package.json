@@ -1,6 +1,6 @@
 {
   "name": "@paragraph-com/mcp",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "type": "module",
   "description": "MCP server for Paragraph — expose your publication to AI agents",
   "repository": {
