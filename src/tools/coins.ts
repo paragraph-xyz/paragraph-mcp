@@ -1,13 +1,13 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
+import { ParagraphAPI } from "@paragraph-com/sdk";
 import {
-  ParagraphAPI,
   getCoinParams,
   getCoinByContractParams,
   getCoinHoldersByIdParams,
   getCoinHoldersByIdQueryParams,
   getCoinHoldersByContractParams,
-} from "@paragraph-com/sdk";
+} from "@paragraph-com/sdk/zod";
 import { error, json } from "./helpers.js";
 
 export function registerCoinTools(

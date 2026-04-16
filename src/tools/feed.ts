@@ -1,8 +1,6 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import {
-  ParagraphAPI,
-  getPostsFeedQueryParams,
-} from "@paragraph-com/sdk";
+import { ParagraphAPI } from "@paragraph-com/sdk";
+import { getPostsFeedQueryParams } from "@paragraph-com/sdk/zod";
 import { error, json, stripHeavyContent } from "./helpers.js";
 
 export function registerFeedTools(

@@ -1,10 +1,10 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { ParagraphAPI } from "@paragraph-com/sdk";
 import {
-  ParagraphAPI,
   listSubscribersQueryParams,
   getSubscriberCountParams,
   addSubscriberBody,
-} from "@paragraph-com/sdk";
+} from "@paragraph-com/sdk/zod";
 import { error, json } from "./helpers.js";
 
 export function registerSubscriberTools(

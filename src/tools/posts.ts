@@ -1,6 +1,6 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { ParagraphAPI } from "@paragraph-com/sdk";
 import {
-  ParagraphAPI,
   getPostByIdParams,
   getPostByIdQueryParams,
   getPostByPublicationSlugAndPostSlugParams,
@@ -10,7 +10,7 @@ import {
   createPostBody,
   updatePostBody,
   sendTestEmailParams,
-} from "@paragraph-com/sdk";
+} from "@paragraph-com/sdk/zod";
 import { z } from "zod";
 import { error, json, stripHeavyContent } from "./helpers.js";
 

@@ -13,7 +13,16 @@ export default defineConfig({
   sourcemap: false,
   clean: true,
   target: "node18",
-  external: [...nodeExternals],
+  external: [
+    // SDK's optional blockchain peers — MCP never calls buy/sell, so these
+    // stay as dynamic imports and only resolve if the user installs them.
+    "viem",
+    "viem/chains",
+    "@whetstone-research/doppler-sdk",
+    "doppler-router",
+    "doppler-router/dist/Permit2",
+    ...nodeExternals,
+  ],
   noExternal: [
     "@paragraph-com/sdk",
     "@modelcontextprotocol/sdk",
