@@ -22,6 +22,8 @@ export function registerPublicationTools(
     {
       title: "Get publication",
       readOnlyHint: true,
+      destructiveHint: false,
+      idempotentHint: true,
       openWorldHint: false,
     },
     async (params) => {

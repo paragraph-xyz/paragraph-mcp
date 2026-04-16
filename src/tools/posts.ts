@@ -37,6 +37,8 @@ export function registerPostTools(
     {
       title: "Get post",
       readOnlyHint: true,
+      destructiveHint: false,
+      idempotentHint: true,
       openWorldHint: false,
     },
     async (params) => {
@@ -104,6 +106,8 @@ export function registerPostTools(
     {
       title: "List posts",
       readOnlyHint: true,
+      destructiveHint: false,
+      idempotentHint: true,
       openWorldHint: false,
     },
     async (params) => {
@@ -163,9 +167,10 @@ export function registerPostTools(
     },
     {
       title: "Create post",
+      readOnlyHint: false,
       destructiveHint: true,
-      openWorldHint: false,
       idempotentHint: false,
+      openWorldHint: false,
     },
     async (params) => {
       try {
@@ -195,9 +200,10 @@ export function registerPostTools(
     },
     {
       title: "Update post",
+      readOnlyHint: false,
       destructiveHint: true,
-      openWorldHint: false,
       idempotentHint: true,
+      openWorldHint: false,
     },
     async (params) => {
       const { id, slug, ...body } = params;
@@ -230,9 +236,10 @@ export function registerPostTools(
     },
     {
       title: "Delete post",
+      readOnlyHint: false,
       destructiveHint: true,
-      openWorldHint: false,
       idempotentHint: false,
+      openWorldHint: false,
     },
     async (params) => {
       if (params.id && params.slug) {
@@ -262,9 +269,10 @@ export function registerPostTools(
     },
     {
       title: "Send test email",
-      destructiveHint: true,
-      openWorldHint: false,
+      readOnlyHint: false,
+      destructiveHint: false,
       idempotentHint: false,
+      openWorldHint: false,
     },
     async (params) => {
       try {

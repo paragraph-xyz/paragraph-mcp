@@ -30,6 +30,8 @@ export function registerCoinTools(
     {
       title: "Get coin",
       readOnlyHint: true,
+      destructiveHint: false,
+      idempotentHint: true,
       openWorldHint: false,
     },
     async (params) => {
@@ -84,6 +86,8 @@ export function registerCoinTools(
     {
       title: "List coin holders",
       readOnlyHint: true,
+      destructiveHint: false,
+      idempotentHint: true,
       openWorldHint: false,
     },
     async (params) => {

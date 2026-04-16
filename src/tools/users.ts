@@ -22,6 +22,8 @@ export function registerUserTools(
     {
       title: "Get user",
       readOnlyHint: true,
+      destructiveHint: false,
+      idempotentHint: true,
       openWorldHint: false,
     },
     async (params) => {

@@ -20,6 +20,8 @@ export function registerSearchTools(
     {
       title: "Search posts",
       readOnlyHint: true,
+      destructiveHint: false,
+      idempotentHint: true,
       openWorldHint: false,
     },
     async (params) => {
@@ -42,6 +44,8 @@ export function registerSearchTools(
     {
       title: "Search publications",
       readOnlyHint: true,
+      destructiveHint: false,
+      idempotentHint: true,
       openWorldHint: false,
     },
     async (params) => {
@@ -64,6 +68,8 @@ export function registerSearchTools(
     {
       title: "Search coins",
       readOnlyHint: true,
+      destructiveHint: false,
+      idempotentHint: true,
       openWorldHint: false,
     },
     async (params) => {

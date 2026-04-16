@@ -86,11 +86,14 @@ function createMcpServer(toolsets?: Toolset[]) {
     name: "Paragraph",
     version: VERSION,
     instructions: [
-      "You are interacting with the Paragraph publishing platform.",
+      "You are interacting with Paragraph, a publishing and newsletter platform for writers.",
+      "Many tools require an API key — use get-me to check authentication and discover the user's publication.",
       "- Posts are created as drafts. Do not publish or send newsletters without explicit user approval.",
       "- Publishing makes content publicly visible and may email subscribers — this cannot be undone.",
       "- Always confirm with the user before deleting posts (deletions are irreversible).",
       "- When displaying post content, link to the original URL on paragraph.com.",
+      "- Post content must be in markdown format.",
+      "- Use small limits and pagination to avoid oversized responses.",
     ].join("\n"),
   });
 

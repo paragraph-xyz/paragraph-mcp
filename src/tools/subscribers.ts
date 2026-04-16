@@ -23,6 +23,8 @@ export function registerSubscriberTools(
     {
       title: "List subscribers",
       readOnlyHint: true,
+      destructiveHint: false,
+      idempotentHint: true,
       openWorldHint: false,
     },
     async (params) => {
@@ -48,6 +50,8 @@ export function registerSubscriberTools(
     {
       title: "Get subscriber count",
       readOnlyHint: true,
+      destructiveHint: false,
+      idempotentHint: true,
       openWorldHint: false,
     },
     async (params) => {
@@ -72,9 +76,10 @@ export function registerSubscriberTools(
     },
     {
       title: "Add subscriber",
-      destructiveHint: true,
-      openWorldHint: false,
+      readOnlyHint: false,
+      destructiveHint: false,
       idempotentHint: true,
+      openWorldHint: false,
     },
     async (params) => {
       if (!params.email && !params.wallet) {

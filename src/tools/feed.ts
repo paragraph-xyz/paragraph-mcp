@@ -25,6 +25,8 @@ export function registerFeedTools(
     {
       title: "Get feed",
       readOnlyHint: true,
+      destructiveHint: false,
+      idempotentHint: true,
       openWorldHint: false,
     },
     async (params) => {
