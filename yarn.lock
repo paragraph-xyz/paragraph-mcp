@@ -1162,7 +1162,7 @@ __metadata:
     "@cloudflare/workers-oauth-provider": ^0.3.1
     "@cloudflare/workers-types": ^4.20250313.0
     "@modelcontextprotocol/sdk": ^1.12.1
-    "@paragraph-com/sdk": ^2.0.0
+    "@paragraph-com/sdk": ^2.0.1
     "@types/node": ^20.0.0
     "@whetstone-research/doppler-sdk": ^0.0.1-alpha.62
     agents: ^0.8.7
@@ -1179,9 +1179,9 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@paragraph-com/sdk@npm:^2.0.0":
-  version: 2.0.0
-  resolution: "@paragraph-com/sdk@npm:2.0.0"
+"@paragraph-com/sdk@npm:^2.0.1":
+  version: 2.0.1
+  resolution: "@paragraph-com/sdk@npm:2.0.1"
   peerDependencies:
     "@whetstone-research/doppler-sdk": ^0.0.1-alpha.62
     doppler-router: ^1.0.15
@@ -1196,7 +1196,7 @@ __metadata:
       optional: true
     zod:
       optional: true
-  checksum: 9a374436bf63b17cdb6ae075d5394ed8259250b4642b41c5252f7324f8aa248e65de02218272bd2f9de610980ee95da2f786e2aa66adfb281f71440f90ca6653
+  checksum: 368d2a86ac9d18e20ace06d3bf178f199750c54984a8a9c12e1286c2588847bc9ad44c560a386d48d6e4a1975eabfd005760750ae3e0a34d2a1a0072ba488044
   languageName: node
   linkType: hard
 

@@ -5,7 +5,7 @@ import {
   searchBlogsQueryParams,
   searchCoinsQueryParams,
 } from "@paragraph-com/sdk/zod";
-import { error, json } from "./helpers.js";
+import { json, toError } from "./helpers.js";
 
 export function registerSearchTools(
   server: McpServer,
@@ -30,7 +30,7 @@ export function registerSearchTools(
         const results = await api.search.posts(params.query);
         return json(results);
       } catch (err) {
-        return error(String(err instanceof Error ? err.message : err));
+        return toError(err);
       }
     }
   );
@@ -54,7 +54,7 @@ export function registerSearchTools(
         const results = await api.search.blogs(params.query);
         return json(results);
       } catch (err) {
-        return error(String(err instanceof Error ? err.message : err));
+        return toError(err);
       }
     }
   );
@@ -78,7 +78,7 @@ export function registerSearchTools(
         const results = await api.search.coins(params.query);
         return json(results);
       } catch (err) {
-        return error(String(err instanceof Error ? err.message : err));
+        return toError(err);
       }
     }
   );

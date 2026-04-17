@@ -12,7 +12,7 @@ import {
   sendTestEmailParams,
 } from "@paragraph-com/sdk/zod";
 import { z } from "zod";
-import { error, json, stripHeavyContent } from "./helpers.js";
+import { error, json, stripHeavyContent, toError } from "./helpers.js";
 
 export function registerPostTools(
   server: McpServer,
@@ -78,7 +78,7 @@ export function registerPostTools(
           .single();
         return json(stripHeavyContent(post));
       } catch (err) {
-        return error(String(err instanceof Error ? err.message : err));
+        return toError(err);
       }
     }
   );
@@ -140,7 +140,7 @@ export function registerPostTools(
         });
         return json({ posts: items.map(stripHeavyContent), pagination });
       } catch (err) {
-        return error(String(err instanceof Error ? err.message : err));
+        return toError(err);
       }
     }
   );
@@ -178,7 +178,7 @@ export function registerPostTools(
         const result = await api.posts.create(params);
         return json(result);
       } catch (err) {
-        return error(String(err instanceof Error ? err.message : err));
+        return toError(err);
       }
     }
   );
@@ -222,7 +222,7 @@ export function registerPostTools(
           : await api.posts.update({ slug: slug!, ...body });
         return json(result);
       } catch (err) {
-        return error(String(err instanceof Error ? err.message : err));
+        return toError(err);
       }
     }
   );
@@ -256,7 +256,7 @@ export function registerPostTools(
           : await api.posts.delete({ slug: params.slug! });
         return json(result);
       } catch (err) {
-        return error(String(err instanceof Error ? err.message : err));
+        return toError(err);
       }
     }
   );
@@ -280,7 +280,7 @@ export function registerPostTools(
         const result = await api.posts.sendTestEmail({ id: params.id });
         return json(result);
       } catch (err) {
-        return error(String(err instanceof Error ? err.message : err));
+        return toError(err);
       }
     }
   );

@@ -1,6 +1,6 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { ParagraphAPI } from "@paragraph-com/sdk";
-import { error, json } from "./helpers.js";
+import { json, toError } from "./helpers.js";
 
 export function registerMeTools(
   server: McpServer,
@@ -23,7 +23,7 @@ export function registerMeTools(
         const result = await api.me.get();
         return json(result);
       } catch (err) {
-        return error(String(err instanceof Error ? err.message : err));
+        return toError(err);
       }
     }
   );

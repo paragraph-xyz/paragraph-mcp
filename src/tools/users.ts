@@ -4,7 +4,7 @@ import {
   getUserParams,
   getUserByWalletParams,
 } from "@paragraph-com/sdk/zod";
-import { error, json } from "./helpers.js";
+import { error, json, toError } from "./helpers.js";
 
 export function registerUserTools(
   server: McpServer,
@@ -41,7 +41,7 @@ export function registerUserTools(
           : await api.users.get({ wallet: params.wallet! }).single();
         return json(user);
       } catch (err) {
-        return error(String(err instanceof Error ? err.message : err));
+        return toError(err);
       }
     }
   );

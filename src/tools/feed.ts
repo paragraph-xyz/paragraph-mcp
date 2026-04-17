@@ -1,7 +1,7 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { ParagraphAPI } from "@paragraph-com/sdk";
 import { getPostsFeedQueryParams } from "@paragraph-com/sdk/zod";
-import { error, json, stripHeavyContent } from "./helpers.js";
+import { json, stripHeavyContent, toError } from "./helpers.js";
 
 export function registerFeedTools(
   server: McpServer,
@@ -40,7 +40,7 @@ export function registerFeedTools(
         );
         return json({ items: stripped, pagination });
       } catch (err) {
-        return error(String(err instanceof Error ? err.message : err));
+        return toError(err);
       }
     }
   );

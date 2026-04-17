@@ -1,11 +1,11 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { ParagraphAPI } from "@paragraph-com/sdk";
+import { ParagraphAPI, ParagraphApiError } from "@paragraph-com/sdk";
 import {
   listSubscribersQueryParams,
   getSubscriberCountParams,
   addSubscriberBody,
 } from "@paragraph-com/sdk/zod";
-import { error, json } from "./helpers.js";
+import { error, json, toError } from "./helpers.js";
 
 export function registerSubscriberTools(
   server: McpServer,
@@ -36,7 +36,7 @@ export function registerSubscriberTools(
         });
         return json(result);
       } catch (err) {
-        return error(String(err instanceof Error ? err.message : err));
+        return toError(err);
       }
     }
   );
@@ -57,12 +57,22 @@ export function registerSubscriberTools(
     async (params) => {
       try {
         const api = getApi();
+        try {
+          await api.publications.get({ id: params.publicationId }).single();
+        } catch (err) {
+          if (err instanceof ParagraphApiError && err.status === 404) {
+            return error(
+              `Invalid publication ID "${params.publicationId}". Call \`get-me\` to obtain the authenticated publication's ID, or use \`search-blogs\` to look one up by name or slug.`
+            );
+          }
+          throw err;
+        }
         const result = await api.subscribers.getCount({
           id: params.publicationId,
         });
         return json(result);
       } catch (err) {
-        return error(String(err instanceof Error ? err.message : err));
+        return toError(err);
       }
     }
   );
@@ -91,7 +101,7 @@ export function registerSubscriberTools(
         const result = await api.subscribers.create(params);
         return json(result);
       } catch (err) {
-        return error(String(err instanceof Error ? err.message : err));
+        return toError(err);
       }
     }
   );

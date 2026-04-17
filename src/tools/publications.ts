@@ -5,7 +5,7 @@ import {
   getPublicationBySlugParams,
   getPublicationByDomainParams,
 } from "@paragraph-com/sdk/zod";
-import { error, json } from "./helpers.js";
+import { error, json, toError } from "./helpers.js";
 
 export function registerPublicationTools(
   server: McpServer,
@@ -45,7 +45,7 @@ export function registerPublicationTools(
         const publication = await api.publications.get(identifier).single();
         return json(publication);
       } catch (err) {
-        return error(String(err instanceof Error ? err.message : err));
+        return toError(err);
       }
     }
   );

@@ -8,7 +8,7 @@ import {
   getCoinHoldersByIdQueryParams,
   getCoinHoldersByContractParams,
 } from "@paragraph-com/sdk/zod";
-import { error, json } from "./helpers.js";
+import { error, json, toError } from "./helpers.js";
 
 export function registerCoinTools(
   server: McpServer,
@@ -65,7 +65,7 @@ export function registerCoinTools(
           .single();
         return json(coin);
       } catch (err) {
-        return error(String(err instanceof Error ? err.message : err));
+        return toError(err);
       }
     }
   );
@@ -113,7 +113,7 @@ export function registerCoinTools(
             );
         return json(result);
       } catch (err) {
-        return error(String(err instanceof Error ? err.message : err));
+        return toError(err);
       }
     }
   );
