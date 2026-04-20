@@ -1,4 +1,5 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import type { GetPostsFeed200ItemsItem } from "@paragraph-com/sdk";
 import { ParagraphAPI } from "@paragraph-com/sdk";
 import { getPostsFeedQueryParams } from "@paragraph-com/sdk/zod";
 import { json, stripHeavyContent, toError } from "./helpers.js";
@@ -35,7 +36,7 @@ export function registerFeedTools(
           cursor: params.cursor,
           includeContent: params.includeContent,
         });
-        const stripped = items.map((item: Record<string, unknown>) =>
+        const stripped = items.map((item: GetPostsFeed200ItemsItem) =>
           item.post ? { ...item, post: stripHeavyContent(item.post) } : item
         );
         return json({ items: stripped, pagination });

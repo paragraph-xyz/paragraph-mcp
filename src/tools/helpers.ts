@@ -1,5 +1,7 @@
 import { ParagraphApiError } from "@paragraph-com/sdk";
 
+export const PARAGRAPH_FRONTEND = "https://paragraph.com";
+
 /** Return an MCP error response. */
 export function error(text: string) {
   return { content: [{ type: "text" as const, text }], isError: true };

@@ -1,4 +1,5 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import type { PublicationIdentifier } from "@paragraph-com/sdk";
 import { ParagraphAPI } from "@paragraph-com/sdk";
 import {
   getPublicationByIdParams,
@@ -36,7 +37,7 @@ export function registerPublicationTools(
 
       try {
         const api = getApi();
-        let identifier: { id: string } | { slug: string } | { domain: string };
+        let identifier: PublicationIdentifier;
 
         if (params.id) identifier = { id: params.id };
         else if (params.slug) identifier = { slug: params.slug };

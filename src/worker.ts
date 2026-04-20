@@ -4,6 +4,7 @@ import OAuthProvider, {
 } from "@cloudflare/workers-oauth-provider";
 import { Hono } from "hono";
 import { mcpHandler } from "./mcp-handler.js";
+import { PARAGRAPH_FRONTEND } from "./tools/helpers.js";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -20,7 +21,6 @@ interface Env {
 // ---------------------------------------------------------------------------
 
 const PARAGRAPH_API = "https://api.paragraph.com";
-const PARAGRAPH_FRONTEND = "https://paragraph.com";
 const POLL_INTERVAL_MS = 1500;
 const POLL_MAX_ATTEMPTS = 120; // 3 minutes max
 

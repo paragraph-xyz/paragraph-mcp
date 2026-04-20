@@ -1,23 +1,126 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import type { GetMe200, GetPostById200 } from "@paragraph-com/sdk";
 import { ParagraphAPI } from "@paragraph-com/sdk";
 import {
+  createPostBody,
+  deletePostBySlugParams,
+  deletePostParams,
   getPostByIdParams,
   getPostByIdQueryParams,
   getPostByPublicationSlugAndPostSlugParams,
   getPostsParams,
   getPostsQueryParams,
   listOwnPostsQueryParams,
-  createPostBody,
-  updatePostBody,
   sendTestEmailParams,
+  updatePostBody,
+  updatePostBySlugParams,
+  updatePostParams,
 } from "@paragraph-com/sdk/zod";
-import { z } from "zod";
-import { error, json, stripHeavyContent, toError } from "./helpers.js";
+import {
+  error,
+  json,
+  PARAGRAPH_FRONTEND,
+  stripHeavyContent,
+  toError,
+} from "./helpers.js";
+
+export type PostUrls = Partial<Pick<GetPostById200, "id" | "slug" | "status">> & {
+  editorUrl?: string;
+  publicUrl?: string;
+};
+
+const POST_PREVIEW_DESCRIPTION =
+  "Preview text used as the meta description in social cards, search results, and archive listings. Keep under 145 characters so it renders without truncation in Google, X, and Farcaster link previews.";
+
+function buildPublicUrl(
+  publication: Pick<GetMe200, "slug" | "customDomain">,
+  postSlug: string
+): string {
+  return publication.customDomain
+    ? `https://${publication.customDomain}/${postSlug}`
+    : `${PARAGRAPH_FRONTEND}/@${publication.slug}/${postSlug}`;
+}
+
+/**
+ * Best-effort enrichment of a mutation response with URLs the writer can
+ * actually open. `editorUrl` is the authenticated draft view/edit page and is
+ * returned for any status; `publicUrl` is the reader-facing URL and is only
+ * returned when the post is actually published (it would 404 otherwise).
+ * Falls back to the publication's custom domain when one is configured.
+ *
+ * The final lookup always goes through the authenticated by-id endpoint —
+ * that's the only response shape that populates `status` for your own posts
+ * (see `GetPostById200Status`). When the caller only has a slug, we resolve
+ * it to an id via the public slug endpoint first (which 404s on drafts and
+ * archived posts — acceptable since drafts are normally identified by id).
+ *
+ * Failures are logged and swallowed so enrichment never masks a successful mutation.
+ */
+export async function buildPostUrls(
+  api: ParagraphAPI,
+  getPublication: () => Promise<GetMe200 | null>,
+  args: { id?: string; slug?: string }
+): Promise<PostUrls> {
+  try {
+    const publication = await getPublication();
+    let postId = args.id;
+    if (!postId && args.slug && publication) {
+      try {
+        const lookup = await api.posts
+          .get(
+            { publicationSlug: publication.slug, postSlug: args.slug },
+            { includeContent: false }
+          )
+          .single();
+        postId = lookup.id;
+      } catch {
+        // Slug not found on the public endpoint (typically because the post
+        // is a draft/archived). Skip enrichment — mutation already succeeded.
+      }
+    }
+    if (!postId) return {};
+
+    const post = await api.posts
+      .get({ id: postId }, { includeContent: false })
+      .single();
+
+    const result: PostUrls = {
+      id: post.id,
+      slug: post.slug,
+      editorUrl: `${PARAGRAPH_FRONTEND}/editor/${post.id}`,
+    };
+    if (post.status) result.status = post.status;
+    if (publication && post.status === "published") {
+      result.publicUrl = buildPublicUrl(publication, post.slug);
+    }
+    return result;
+  } catch (err) {
+    console.warn("[posts] buildPostUrls enrichment failed", err);
+    return {};
+  }
+}
 
 export function registerPostTools(
   server: McpServer,
   getApi: () => ParagraphAPI
 ) {
+  let cachedPublication: GetMe200 | null = null;
+  let cachedPublicationPromise: Promise<GetMe200 | null> | null = null;
+  const getPublication = async (): Promise<GetMe200 | null> => {
+    if (cachedPublication) return cachedPublication;
+    if (cachedPublicationPromise) return cachedPublicationPromise;
+    cachedPublicationPromise = (async () => {
+      try {
+        cachedPublication = await getApi().me.get();
+        return cachedPublication;
+      } catch {
+        return null;
+      } finally {
+        cachedPublicationPromise = null;
+      }
+    })();
+    return cachedPublicationPromise;
+  };
   server.tool(
     "get-post",
     "Get a single post by ID, or by publication slug + post slug",
@@ -154,7 +257,9 @@ export function registerPostTools(
       subtitle: createPostBody.shape.subtitle,
       slug: createPostBody.shape.slug,
       imageUrl: createPostBody.shape.imageUrl,
-      postPreview: createPostBody.shape.postPreview,
+      postPreview: createPostBody.shape.postPreview.describe(
+        POST_PREVIEW_DESCRIPTION
+      ),
       categories: createPostBody.shape.categories,
       sendNewsletter: createPostBody.shape.sendNewsletter,
       scheduledAt: createPostBody.shape.scheduledAt,
@@ -176,7 +281,10 @@ export function registerPostTools(
       try {
         const api = getApi();
         const result = await api.posts.create(params);
-        return json(result);
+        const urls = await buildPostUrls(api, getPublication, {
+          id: result.id,
+        });
+        return json({ ...result, ...urls });
       } catch (err) {
         return toError(err);
       }
@@ -187,8 +295,17 @@ export function registerPostTools(
     "update-post",
     "Update an existing post by ID or slug. Only provided fields are updated — omit any field you don't want to change. Requires API key. Do NOT pass `status` unless you explicitly intend to change the publish state — and always confirm with the user before any status change: `status: 'published'` publishes the post, `status: 'draft'` unpublishes a live post, `status: 'archived'` archives. When updating other fields (title, markdown, categories, etc.) on a post, omit `status` entirely — do not echo back a value read from get-post/list-posts. Set scheduledAt to a future Unix ms timestamp to schedule first-publish (confirm with the user first — the post will publish automatically at the scheduled time); pass scheduledAt: null to cancel.",
     {
-      id: z.string().min(1).optional().describe("Post ID (use id or slug, not both)"),
-      slug: z.string().min(1).optional().describe("Post slug (use id or slug, not both)"),
+      id: updatePostParams.shape.postId
+        .optional()
+        .describe("Post ID (use id or slug, not both)"),
+      slug: updatePostBySlugParams.shape.slug
+        .optional()
+        .describe(
+          "Post slug used to identify the post (use id or slug, not both). To rename the slug, see `newSlug`."
+        ),
+      newSlug: updatePostBody.shape.slug.describe(
+        "New slug to rename the post to. Requires identifying the post by `id`, not `slug`. Changes the public URL and breaks existing links / SEO — confirm with the user before renaming a published post."
+      ),
       title: updatePostBody.shape.title,
       markdown: updatePostBody.shape.markdown,
       subtitle: updatePostBody.shape.subtitle,
@@ -197,7 +314,9 @@ export function registerPostTools(
       ),
       scheduledAt: updatePostBody.shape.scheduledAt,
       sendNewsletter: updatePostBody.shape.sendNewsletter,
-      postPreview: updatePostBody.shape.postPreview,
+      postPreview: updatePostBody.shape.postPreview.describe(
+        POST_PREVIEW_DESCRIPTION
+      ),
       categories: updatePostBody.shape.categories,
     },
     {
@@ -208,7 +327,7 @@ export function registerPostTools(
       openWorldHint: false,
     },
     async (params) => {
-      const { id, slug, ...body } = params;
+      const { id, slug, newSlug, ...rest } = params;
 
       if (id && slug) {
         return error("Provide either id or slug, not both");
@@ -216,13 +335,25 @@ export function registerPostTools(
       if (!id && !slug) {
         return error("Provide either id or slug");
       }
+      if (slug && newSlug !== undefined) {
+        return error(
+          "Cannot rename the slug when identifying the post by slug (the request path would target the new slug before it exists). Identify the post by id instead — look it up with get-post if needed."
+        );
+      }
+
+      const body = newSlug !== undefined ? { ...rest, slug: newSlug } : rest;
 
       try {
         const api = getApi();
         const result = id
           ? await api.posts.update({ id, ...body })
           : await api.posts.update({ slug: slug!, ...body });
-        return json(result);
+        const urls = await buildPostUrls(
+          api,
+          getPublication,
+          id ? { id } : { slug: slug! }
+        );
+        return json({ ...result, ...urls });
       } catch (err) {
         return toError(err);
       }
@@ -233,8 +364,8 @@ export function registerPostTools(
     "delete-post",
     "Permanently delete a post by ID or slug. This action is irreversible. Always confirm with the user before deleting. Requires API key.",
     {
-      id: z.string().min(1).optional().describe("Post ID"),
-      slug: z.string().min(1).optional().describe("Post slug"),
+      id: deletePostParams.shape.postId.optional().describe("Post ID"),
+      slug: deletePostBySlugParams.shape.slug.optional().describe("Post slug"),
     },
     {
       title: "Delete post",

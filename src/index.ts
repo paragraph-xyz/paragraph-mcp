@@ -4,6 +4,7 @@ import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/
 import { ParagraphAPI } from "@paragraph-com/sdk";
 import { createServer } from "http";
 import { resolveApiKey } from "./config.js";
+import { PARAGRAPH_SERVER_INSTRUCTIONS } from "./instructions.js";
 import { registerTools, ALL_TOOLSETS, type Toolset } from "./tools/index.js";
 import { VERSION } from "./version.js";
 
@@ -85,16 +86,7 @@ function createMcpServer(toolsets?: Toolset[]) {
   const server = new McpServer({
     name: "Paragraph",
     version: VERSION,
-    instructions: [
-      "You are interacting with Paragraph, a publishing and newsletter platform for writers.",
-      "Many tools require an API key — use get-me to check authentication and discover the user's publication.",
-      "- Posts are created as drafts. Do not publish or send newsletters without explicit user approval.",
-      "- Publishing makes content publicly visible and may email subscribers — this cannot be undone.",
-      "- Always confirm with the user before deleting posts (deletions are irreversible).",
-      "- When displaying post content, link to the original URL on paragraph.com.",
-      "- Post content must be in markdown format.",
-      "- Use small limits and pagination to avoid oversized responses.",
-    ].join("\n"),
+    instructions: PARAGRAPH_SERVER_INSTRUCTIONS,
   });
 
   // Lazy API client — created once per server, re-uses the same key
