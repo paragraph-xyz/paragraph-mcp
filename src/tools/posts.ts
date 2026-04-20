@@ -185,14 +185,16 @@ export function registerPostTools(
 
   server.tool(
     "update-post",
-    "Update an existing post by ID or slug. Only provided fields are updated. Requires API key. Setting status to 'published' makes the post publicly visible — always confirm with the user before publishing. Set scheduledAt to a future Unix ms timestamp to schedule first-publish (confirm with the user first — the post will publish automatically at the scheduled time); pass scheduledAt: null to cancel.",
+    "Update an existing post by ID or slug. Only provided fields are updated — omit any field you don't want to change. Requires API key. Do NOT pass `status` unless you explicitly intend to change the publish state — and always confirm with the user before any status change: `status: 'published'` publishes the post, `status: 'draft'` unpublishes a live post, `status: 'archived'` archives. When updating other fields (title, markdown, categories, etc.) on a post, omit `status` entirely — do not echo back a value read from get-post/list-posts. Set scheduledAt to a future Unix ms timestamp to schedule first-publish (confirm with the user first — the post will publish automatically at the scheduled time); pass scheduledAt: null to cancel.",
     {
       id: z.string().min(1).optional().describe("Post ID (use id or slug, not both)"),
       slug: z.string().min(1).optional().describe("Post slug (use id or slug, not both)"),
       title: updatePostBody.shape.title,
       markdown: updatePostBody.shape.markdown,
       subtitle: updatePostBody.shape.subtitle,
-      status: updatePostBody.shape.status,
+      status: updatePostBody.shape.status.describe(
+        "OMIT unless explicitly changing publish state. Always confirm with the user before any status change. 'published' publishes; 'draft' unpublishes a live post; 'archived' archives. Do NOT pass this field when updating other fields like title or markdown — and never round-trip a value read from get-post/list-posts."
+      ),
       scheduledAt: updatePostBody.shape.scheduledAt,
       sendNewsletter: updatePostBody.shape.sendNewsletter,
       postPreview: updatePostBody.shape.postPreview,
