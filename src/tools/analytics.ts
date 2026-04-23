@@ -8,12 +8,23 @@ Run a read-only SQL query against the authenticated publication's analytics sche
 Scoped automatically to the blog identified by the API key — do not include blog_id
 filters in the WHERE clause.
 
-**When to use this tool:** questions about newsletter open rates, click-through
-rates, subscriber counts, unsubscribe rates, post views, unique visitors, read
-time, engagement scores, top-performing posts, campaign attribution (UTMs,
-referrers), or any quantitative metric about the publication. Triggers include
-"how many subscribers", "what's my open rate", "which post performed best",
-"traffic sources", "analytics for", "stats on", "report on".
+**When to use this tool:** questions that require computing or filtering across
+newsletter or view data — open rates, click-through rates, unsubscribe rates,
+engagement scores, read time, traffic sources / UTMs / referrers, time-series
+trends, reader countries, link-level click analysis, or rankings that need
+sorting by a metric the simple list endpoints don't expose. Triggers include
+"open rate", "CTR", "engagement", "which post performed best",
+"traffic sources", "inactive subscribers", "reader countries", "daily views".
+
+**Don't use this tool for:**
+- Active subscriber count → call \`get-subscriber-count\` (cheaper, no SQL).
+- Listing or browsing subscribers → call \`list-subscribers\`.
+- Listing or fetching posts by id/slug, or simple post metadata → call
+  \`list-posts\` or \`get-post\`.
+- Publication metadata → call \`get-me\` or \`get-publication\`.
+
+Only reach for SQL when the answer genuinely requires joining, aggregating,
+or filtering data the direct tools don't return.
 
 **Query rules:**
 - \`SELECT\` and \`WITH\` (CTE) statements only
