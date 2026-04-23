@@ -171,6 +171,10 @@ npx @paragraph-com/mcp --http --port 3100
 ### Me
 - **get-me** — Get your authenticated publication info
 
+### Analytics
+- **analytics-query** — Run a read-only SQL query against your publication's analytics (open rates, CTR, subscriber counts, top posts, etc.)
+- **analytics-schema** — List available tables and columns in the analytics schema
+
 ## Toolset Filtering
 
 Only expose the tools your agent needs:
@@ -179,7 +183,7 @@ Only expose the tools your agent needs:
 npx @paragraph-com/mcp --toolsets posts,search
 ```
 
-Available toolsets: `posts`, `publications`, `subscribers`, `users`, `coins`, `search`, `feed`, `me`
+Available toolsets: `posts`, `publications`, `subscribers`, `users`, `coins`, `search`, `feed`, `me`, `analytics`
 
 ## Examples
 
@@ -200,6 +204,12 @@ The server calls `create-post` with the title and generated markdown content, cr
 **Prompt:** "How many subscribers does my publication have? Show me the most recent ones."
 
 The server calls `get-me` to identify your publication, then `get-subscriber-count` for the total, and `list-subscribers` to return the latest subscribers with their details.
+
+### Answer questions about newsletter performance
+
+**Prompt:** "What's my average open rate over the last 30 days, and which posts performed best?"
+
+The server calls `analytics-query` with a scoped SQL query against `post_analytics_summary`, returning open rates, CTR, and views for each post. Claude summarizes the trend and highlights the top performers.
 
 ### Explore the platform feed
 
