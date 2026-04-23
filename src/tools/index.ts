@@ -8,6 +8,7 @@ import { registerCoinTools } from "./coins.js";
 import { registerSearchTools } from "./search.js";
 import { registerFeedTools } from "./feed.js";
 import { registerMeTools } from "./me.js";
+import { registerAnalyticsTools } from "./analytics.js";
 
 export type Toolset =
   | "posts"
@@ -17,7 +18,8 @@ export type Toolset =
   | "coins"
   | "search"
   | "feed"
-  | "me";
+  | "me"
+  | "analytics";
 
 export const ALL_TOOLSETS: Toolset[] = [
   "posts",
@@ -28,6 +30,7 @@ export const ALL_TOOLSETS: Toolset[] = [
   "search",
   "feed",
   "me",
+  "analytics",
 ];
 
 const toolsetRegistrars: Record<
@@ -42,6 +45,7 @@ const toolsetRegistrars: Record<
   search: registerSearchTools,
   feed: registerFeedTools,
   me: registerMeTools,
+  analytics: registerAnalyticsTools,
 };
 
 export function registerTools(
