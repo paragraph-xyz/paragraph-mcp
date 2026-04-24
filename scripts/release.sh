@@ -31,11 +31,20 @@ if [[ -z "${NPM_TOKEN:-}" ]]; then
   exit 1
 fi
 
-# Verify wrangler is authenticated
-if ! npx wrangler whoami &>/dev/null; then
-  echo "Error: wrangler is not authenticated."
+# Verify wrangler can actually access this Worker.
+# `deployments list` hits the Cloudflare API scoped to the Worker in
+# wrangler.jsonc, so it fails both when wrangler isn't logged in AND when the
+# token is missing the account/workers scopes needed to deploy. This is
+# stronger than `wrangler whoami`, which only proves *some* account is logged
+# in — not that it can touch this Worker.
+if ! npx wrangler deployments list &>/dev/null; then
+  echo "Error: wrangler cannot access this Worker."
   echo ""
-  echo "Run 'wrangler login' or set CLOUDFLARE_API_TOKEN."
+  echo "Either wrangler is not logged in, or the active credentials don't have"
+  echo "access to the 'paragraph-mcp' Worker account."
+  echo ""
+  echo "Run 'wrangler login' or set CLOUDFLARE_API_TOKEN with a token that has"
+  echo "Workers Scripts:Edit on the correct account."
   exit 1
 fi
 
@@ -54,6 +63,12 @@ fi
 
 # Pull latest
 git pull --rebase
+
+# Install deps with --immutable: fails loudly on a lockfile/package.json
+# mismatch and refreshes node_modules so the build can't run against a stale
+# SDK version.
+echo "=> Installing dependencies..."
+yarn install --immutable
 
 # Build and test
 echo "=> Building..."
