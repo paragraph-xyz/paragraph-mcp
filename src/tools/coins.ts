@@ -14,25 +14,28 @@ export function registerCoinTools(
   server: McpServer,
   getApi: () => ParagraphAPI
 ) {
-  server.tool(
+  server.registerTool(
     "get-coin",
-    "Get coin/token metadata by ID or contract address, or list popular coins",
-    {
-      id: getCoinParams.shape.id.optional().describe("Coin ID"),
-      contractAddress: getCoinByContractParams.shape.contractAddress
-        .optional()
-        .describe("On-chain contract address"),
-      popular: z
-        .boolean()
-        .optional()
-        .describe("Set to true to get popular coins"),
-    },
     {
       title: "Get coin",
-      readOnlyHint: true,
-      destructiveHint: false,
-      idempotentHint: true,
-      openWorldHint: false,
+      description:
+        "Get coin/token metadata by ID or contract address, or list popular coins",
+      inputSchema: {
+        id: getCoinParams.shape.id.optional().describe("Coin ID"),
+        contractAddress: getCoinByContractParams.shape.contractAddress
+          .optional()
+          .describe("On-chain contract address"),
+        popular: z
+          .boolean()
+          .optional()
+          .describe("Set to true to get popular coins"),
+      },
+      annotations: {
+        readOnlyHint: true,
+        destructiveHint: false,
+        idempotentHint: true,
+        openWorldHint: false,
+      },
     },
     async (params) => {
       const hasId = params.id !== undefined;
@@ -70,25 +73,28 @@ export function registerCoinTools(
     }
   );
 
-  server.tool(
+  server.registerTool(
     "list-coin-holders",
-    "Get a paginated list of holders for a coin by ID or contract address",
-    {
-      id: getCoinHoldersByIdParams.shape.id.optional().describe("Coin ID"),
-      contractAddress: getCoinHoldersByContractParams.shape.contractAddress
-        .optional()
-        .describe("On-chain contract address"),
-      limit: getCoinHoldersByIdQueryParams.shape.limit.describe(
-        "Number of holders to return. Keep this small to avoid oversized responses — use pagination to retrieve more."
-      ),
-      cursor: getCoinHoldersByIdQueryParams.shape.cursor,
-    },
     {
       title: "List coin holders",
-      readOnlyHint: true,
-      destructiveHint: false,
-      idempotentHint: true,
-      openWorldHint: false,
+      description:
+        "Get a paginated list of holders for a coin by ID or contract address",
+      inputSchema: {
+        id: getCoinHoldersByIdParams.shape.id.optional().describe("Coin ID"),
+        contractAddress: getCoinHoldersByContractParams.shape.contractAddress
+          .optional()
+          .describe("On-chain contract address"),
+        limit: getCoinHoldersByIdQueryParams.shape.limit.describe(
+          "Number of holders to return. Keep this small to avoid oversized responses — use pagination to retrieve more."
+        ),
+        cursor: getCoinHoldersByIdQueryParams.shape.cursor,
+      },
+      annotations: {
+        readOnlyHint: true,
+        destructiveHint: false,
+        idempotentHint: true,
+        openWorldHint: false,
+      },
     },
     async (params) => {
       if (params.id && params.contractAddress) {

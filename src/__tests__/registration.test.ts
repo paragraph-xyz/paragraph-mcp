@@ -4,8 +4,8 @@ import type { Client } from "@modelcontextprotocol/sdk/client/index.js";
 
 const ALL_TOOL_NAMES = [
   "get-post", "list-posts", "create-post", "update-post", "delete-post", "send-test-email",
-  "get-publication",
-  "list-subscribers", "get-subscriber-count", "add-subscriber",
+  "get-publication", "update-publication",
+  "list-subscribers", "get-subscriber-count", "add-subscriber", "remove-subscriber",
   "get-user",
   "get-coin", "list-coin-holders",
   "search-posts", "search-blogs", "search-coins",
@@ -18,7 +18,7 @@ describe("tool registration", () => {
   let client: Client;
   afterEach(async () => { await client?.close(); });
 
-  it("registers all 20 tools", async () => {
+  it("registers all 22 tools", async () => {
     ({ client } = await createTestClient());
     const { tools } = await client.listTools();
     expect(tools.map((t) => t.name).sort()).toEqual([...ALL_TOOL_NAMES].sort());

@@ -10,21 +10,23 @@ export function registerUserTools(
   server: McpServer,
   getApi: () => ParagraphAPI
 ) {
-  server.tool(
+  server.registerTool(
     "get-user",
-    "Get user profile by ID or Ethereum wallet address",
-    {
-      id: getUserParams.shape.userId.optional().describe("User ID"),
-      wallet: getUserByWalletParams.shape.walletAddress
-        .optional()
-        .describe("Ethereum wallet address (e.g. '0x1234...')"),
-    },
     {
       title: "Get user",
-      readOnlyHint: true,
-      destructiveHint: false,
-      idempotentHint: true,
-      openWorldHint: false,
+      description: "Get user profile by ID or Ethereum wallet address",
+      inputSchema: {
+        id: getUserParams.shape.userId.optional().describe("User ID"),
+        wallet: getUserByWalletParams.shape.walletAddress
+          .optional()
+          .describe("Ethereum wallet address (e.g. '0x1234...')"),
+      },
+      annotations: {
+        readOnlyHint: true,
+        destructiveHint: false,
+        idempotentHint: true,
+        openWorldHint: false,
+      },
     },
     async (params) => {
       if (params.id && params.wallet) {

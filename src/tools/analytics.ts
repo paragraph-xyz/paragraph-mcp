@@ -109,18 +109,20 @@ export function registerAnalyticsTools(
   server: McpServer,
   getApi: () => ParagraphAPI
 ) {
-  server.tool(
+  server.registerTool(
     "analytics-query",
-    ANALYTICS_QUERY_DESCRIPTION,
-    {
-      sql: analyticsQueryBody.shape.sql,
-    },
     {
       title: "Run an analytics SQL query",
-      readOnlyHint: true,
-      destructiveHint: false,
-      idempotentHint: true,
-      openWorldHint: false,
+      description: ANALYTICS_QUERY_DESCRIPTION,
+      inputSchema: {
+        sql: analyticsQueryBody.shape.sql,
+      },
+      annotations: {
+        readOnlyHint: true,
+        destructiveHint: false,
+        idempotentHint: true,
+        openWorldHint: false,
+      },
     },
     async (params) => {
       try {
@@ -133,16 +135,18 @@ export function registerAnalyticsTools(
     }
   );
 
-  server.tool(
+  server.registerTool(
     "analytics-schema",
-    ANALYTICS_SCHEMA_DESCRIPTION,
-    {},
     {
       title: "Describe the analytics schema",
-      readOnlyHint: true,
-      destructiveHint: false,
-      idempotentHint: true,
-      openWorldHint: false,
+      description: ANALYTICS_SCHEMA_DESCRIPTION,
+      inputSchema: {},
+      annotations: {
+        readOnlyHint: true,
+        destructiveHint: false,
+        idempotentHint: true,
+        openWorldHint: false,
+      },
     },
     async () => {
       try {

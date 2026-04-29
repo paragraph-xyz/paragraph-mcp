@@ -121,28 +121,31 @@ export function registerPostTools(
     })();
     return cachedPublicationPromise;
   };
-  server.tool(
+  server.registerTool(
     "get-post",
-    "Get a single post by ID, or by publication slug + post slug",
-    {
-      id: getPostByIdParams.shape.postId.optional().describe("Post ID"),
-      publicationSlug: getPostByPublicationSlugAndPostSlugParams.shape.publicationSlug
-        .optional()
-        .describe("Publication slug (use with postSlug)"),
-      postSlug: getPostByPublicationSlugAndPostSlugParams.shape.postSlug
-        .optional()
-        .describe("Post slug (use with publicationSlug)"),
-      includeContent: getPostByIdQueryParams.shape.includeContent
-        .unwrap()
-        .default(true)
-        .describe("Include post content as markdown (default: true)"),
-    },
     {
       title: "Get post",
-      readOnlyHint: true,
-      destructiveHint: false,
-      idempotentHint: true,
-      openWorldHint: false,
+      description:
+        "Get a single post by ID, or by publication slug + post slug",
+      inputSchema: {
+        id: getPostByIdParams.shape.postId.optional().describe("Post ID"),
+        publicationSlug: getPostByPublicationSlugAndPostSlugParams.shape.publicationSlug
+          .optional()
+          .describe("Publication slug (use with postSlug)"),
+        postSlug: getPostByPublicationSlugAndPostSlugParams.shape.postSlug
+          .optional()
+          .describe("Post slug (use with publicationSlug)"),
+        includeContent: getPostByIdQueryParams.shape.includeContent
+          .unwrap()
+          .default(true)
+          .describe("Include post content as markdown (default: true)"),
+      },
+      annotations: {
+        readOnlyHint: true,
+        destructiveHint: false,
+        idempotentHint: true,
+        openWorldHint: false,
+      },
     },
     async (params) => {
       const hasId = !!params.id;
@@ -186,32 +189,35 @@ export function registerPostTools(
     }
   );
 
-  server.tool(
+  server.registerTool(
     "list-posts",
-    "List posts from a publication by publication ID, or list your own posts (requires API key). Supports pagination and status filtering. Tip: if you only need the total count, set limit to 1 — the response includes pagination.total. Start with a small limit and increase only if needed, as large limits may produce oversized responses.",
-    {
-      publicationId: getPostsParams.shape.publicationId.optional().describe(
-        "Publication ID to list posts from. Omit to list your own posts (requires API key)."
-      ),
-      status: listOwnPostsQueryParams.shape.status.describe(
-        "Filter by status (only for own posts)"
-      ),
-      limit: getPostsQueryParams.shape.limit
-        .describe(
-          "Number of posts to return (default: 10). Keep this small to avoid oversized responses — use pagination to retrieve more."
-        ),
-      cursor: getPostsQueryParams.shape.cursor,
-      includeContent: getPostsQueryParams.shape.includeContent
-        .unwrap()
-        .default(false)
-        .describe("Include post content as markdown (default: false)"),
-    },
     {
       title: "List posts",
-      readOnlyHint: true,
-      destructiveHint: false,
-      idempotentHint: true,
-      openWorldHint: false,
+      description:
+        "List posts from a publication by publication ID, or list your own posts (requires API key). Supports pagination and status filtering. Tip: if you only need the total count, set limit to 1 — the response includes pagination.total. Start with a small limit and increase only if needed, as large limits may produce oversized responses.",
+      inputSchema: {
+        publicationId: getPostsParams.shape.publicationId.optional().describe(
+          "Publication ID to list posts from. Omit to list your own posts (requires API key)."
+        ),
+        status: listOwnPostsQueryParams.shape.status.describe(
+          "Filter by status (only for own posts)"
+        ),
+        limit: getPostsQueryParams.shape.limit
+          .describe(
+            "Number of posts to return (default: 10). Keep this small to avoid oversized responses — use pagination to retrieve more."
+          ),
+        cursor: getPostsQueryParams.shape.cursor,
+        includeContent: getPostsQueryParams.shape.includeContent
+          .unwrap()
+          .default(false)
+          .describe("Include post content as markdown (default: false)"),
+      },
+      annotations: {
+        readOnlyHint: true,
+        destructiveHint: false,
+        idempotentHint: true,
+        openWorldHint: false,
+      },
     },
     async (params) => {
       if (params.publicationId && params.status) {
@@ -248,34 +254,37 @@ export function registerPostTools(
     }
   );
 
-  server.tool(
+  server.registerTool(
     "create-post",
-    "Create a post in your publication. Defaults to a draft — set status to 'published' only with explicit user approval, as this makes the post publicly visible. Set scheduledAt to a future Unix ms timestamp to schedule first-publish — confirm with the user before scheduling, as the post will be published automatically at the scheduled time. Requires API key. Content must be in markdown format. Do not set sendNewsletter to true without explicit user approval — it emails all subscribers and cannot be undone.",
-    {
-      title: createPostBody.shape.title.describe("Post title"),
-      markdown: createPostBody.shape.markdown.describe("Post content in markdown format"),
-      subtitle: createPostBody.shape.subtitle,
-      slug: createPostBody.shape.slug,
-      imageUrl: createPostBody.shape.imageUrl,
-      postPreview: createPostBody.shape.postPreview.describe(
-        POST_PREVIEW_DESCRIPTION
-      ),
-      categories: createPostBody.shape.categories,
-      sendNewsletter: createPostBody.shape.sendNewsletter,
-      scheduledAt: createPostBody.shape.scheduledAt,
-      status: createPostBody.shape.status
-        .unwrap()
-        .default("draft")
-        .describe(
-          "Post status. Defaults to 'draft'. Only set to 'published' with explicit user approval."
-        ),
-    },
     {
       title: "Create post",
-      readOnlyHint: false,
-      destructiveHint: true,
-      idempotentHint: false,
-      openWorldHint: false,
+      description:
+        "Create a post in your publication. Defaults to a draft — set status to 'published' only with explicit user approval, as this makes the post publicly visible. Set scheduledAt to a future Unix ms timestamp to schedule first-publish — confirm with the user before scheduling, as the post will be published automatically at the scheduled time. Requires API key. Content must be in markdown format. Do not set sendNewsletter to true without explicit user approval — it emails all subscribers and cannot be undone.",
+      inputSchema: {
+        title: createPostBody.shape.title.describe("Post title"),
+        markdown: createPostBody.shape.markdown.describe("Post content in markdown format"),
+        subtitle: createPostBody.shape.subtitle,
+        slug: createPostBody.shape.slug,
+        imageUrl: createPostBody.shape.imageUrl,
+        postPreview: createPostBody.shape.postPreview.describe(
+          POST_PREVIEW_DESCRIPTION
+        ),
+        categories: createPostBody.shape.categories,
+        sendNewsletter: createPostBody.shape.sendNewsletter,
+        scheduledAt: createPostBody.shape.scheduledAt,
+        status: createPostBody.shape.status
+          .unwrap()
+          .default("draft")
+          .describe(
+            "Post status. Defaults to 'draft'. Only set to 'published' with explicit user approval."
+          ),
+      },
+      annotations: {
+        readOnlyHint: false,
+        destructiveHint: true,
+        idempotentHint: false,
+        openWorldHint: false,
+      },
     },
     async (params) => {
       try {
@@ -291,40 +300,46 @@ export function registerPostTools(
     }
   );
 
-  server.tool(
+  server.registerTool(
     "update-post",
-    "Update an existing post by ID or slug. Only provided fields are updated — omit any field you don't want to change. Requires API key. Do NOT pass `status` unless you explicitly intend to change the publish state — and always confirm with the user before any status change: `status: 'published'` publishes the post, `status: 'draft'` unpublishes a live post, `status: 'archived'` archives. When updating other fields (title, markdown, categories, etc.) on a post, omit `status` entirely — do not echo back a value read from get-post/list-posts. Set scheduledAt to a future Unix ms timestamp to schedule first-publish (confirm with the user first — the post will publish automatically at the scheduled time); pass scheduledAt: null to cancel.",
-    {
-      id: updatePostParams.shape.postId
-        .optional()
-        .describe("Post ID (use id or slug, not both)"),
-      slug: updatePostBySlugParams.shape.slug
-        .optional()
-        .describe(
-          "Post slug used to identify the post (use id or slug, not both). To rename the slug, see `newSlug`."
-        ),
-      newSlug: updatePostBody.shape.slug.describe(
-        "New slug to rename the post to. Requires identifying the post by `id`, not `slug`. Changes the public URL and breaks existing links / SEO — confirm with the user before renaming a published post."
-      ),
-      title: updatePostBody.shape.title,
-      markdown: updatePostBody.shape.markdown,
-      subtitle: updatePostBody.shape.subtitle,
-      status: updatePostBody.shape.status.describe(
-        "OMIT unless explicitly changing publish state. Always confirm with the user before any status change. 'published' publishes; 'draft' unpublishes a live post; 'archived' archives. Do NOT pass this field when updating other fields like title or markdown — and never round-trip a value read from get-post/list-posts."
-      ),
-      scheduledAt: updatePostBody.shape.scheduledAt,
-      sendNewsletter: updatePostBody.shape.sendNewsletter,
-      postPreview: updatePostBody.shape.postPreview.describe(
-        POST_PREVIEW_DESCRIPTION
-      ),
-      categories: updatePostBody.shape.categories,
-    },
     {
       title: "Update post",
-      readOnlyHint: false,
-      destructiveHint: true,
-      idempotentHint: true,
-      openWorldHint: false,
+      description:
+        "Update an existing post by ID or slug. Only provided fields are updated — omit any field you don't want to change. Requires API key. Do NOT pass `status` unless you explicitly intend to change the publish state — and always confirm with the user before any status change: `status: 'published'` publishes the post, `status: 'draft'` unpublishes a live post, `status: 'archived'` archives. When updating other fields (title, markdown, categories, etc.) on a post, omit `status` entirely — do not echo back a value read from get-post/list-posts. Set scheduledAt to a future Unix ms timestamp to schedule first-publish (confirm with the user first — the post will publish automatically at the scheduled time); pass scheduledAt: null to cancel. Set publishedAt to a Unix ms timestamp to backdate (or post-date) the post's display date — once set, the value sticks across re-publishes.",
+      inputSchema: {
+        id: updatePostParams.shape.postId
+          .optional()
+          .describe("Post ID (use id or slug, not both)"),
+        slug: updatePostBySlugParams.shape.slug
+          .optional()
+          .describe(
+            "Post slug used to identify the post (use id or slug, not both). To rename the slug, see `newSlug`."
+          ),
+        newSlug: updatePostBody.shape.slug.describe(
+          "New slug to rename the post to. Requires identifying the post by `id`, not `slug`. Changes the public URL and breaks existing links / SEO — confirm with the user before renaming a published post."
+        ),
+        title: updatePostBody.shape.title,
+        markdown: updatePostBody.shape.markdown,
+        subtitle: updatePostBody.shape.subtitle,
+        status: updatePostBody.shape.status.describe(
+          "OMIT unless explicitly changing publish state. Always confirm with the user before any status change. 'published' publishes; 'draft' unpublishes a live post; 'archived' archives. Do NOT pass this field when updating other fields like title or markdown — and never round-trip a value read from get-post/list-posts."
+        ),
+        scheduledAt: updatePostBody.shape.scheduledAt,
+        publishedAt: updatePostBody.shape.publishedAt.describe(
+          "Unix ms timestamp to set as the post's display publish date. Once set, the value is preserved across re-publishes. Useful for backdating imported content or correcting a publish date."
+        ),
+        sendNewsletter: updatePostBody.shape.sendNewsletter,
+        postPreview: updatePostBody.shape.postPreview.describe(
+          POST_PREVIEW_DESCRIPTION
+        ),
+        categories: updatePostBody.shape.categories,
+      },
+      annotations: {
+        readOnlyHint: false,
+        destructiveHint: true,
+        idempotentHint: true,
+        openWorldHint: false,
+      },
     },
     async (params) => {
       const { id, slug, newSlug, ...rest } = params;
@@ -360,19 +375,22 @@ export function registerPostTools(
     }
   );
 
-  server.tool(
+  server.registerTool(
     "delete-post",
-    "Permanently delete a post by ID or slug. This action is irreversible. Always confirm with the user before deleting. Requires API key.",
-    {
-      id: deletePostParams.shape.postId.optional().describe("Post ID"),
-      slug: deletePostBySlugParams.shape.slug.optional().describe("Post slug"),
-    },
     {
       title: "Delete post",
-      readOnlyHint: false,
-      destructiveHint: true,
-      idempotentHint: false,
-      openWorldHint: false,
+      description:
+        "Permanently delete a post by ID or slug. This action is irreversible. Always confirm with the user before deleting. Requires API key.",
+      inputSchema: {
+        id: deletePostParams.shape.postId.optional().describe("Post ID"),
+        slug: deletePostBySlugParams.shape.slug.optional().describe("Post slug"),
+      },
+      annotations: {
+        readOnlyHint: false,
+        destructiveHint: true,
+        idempotentHint: false,
+        openWorldHint: false,
+      },
     },
     async (params) => {
       if (params.id && params.slug) {
@@ -394,18 +412,21 @@ export function registerPostTools(
     }
   );
 
-  server.tool(
+  server.registerTool(
     "send-test-email",
-    "Send a test newsletter email for a draft post to the publication owner. Only works for draft posts. Requires API key.",
-    {
-      id: sendTestEmailParams.shape.postId.describe("Post ID"),
-    },
     {
       title: "Send test email",
-      readOnlyHint: false,
-      destructiveHint: false,
-      idempotentHint: false,
-      openWorldHint: false,
+      description:
+        "Send a test newsletter email for a draft post to the publication owner. Only works for draft posts. Requires API key.",
+      inputSchema: {
+        id: sendTestEmailParams.shape.postId.describe("Post ID"),
+      },
+      annotations: {
+        readOnlyHint: false,
+        destructiveHint: false,
+        idempotentHint: false,
+        openWorldHint: false,
+      },
     },
     async (params) => {
       try {

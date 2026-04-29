@@ -11,18 +11,20 @@ export function registerSearchTools(
   server: McpServer,
   getApi: () => ParagraphAPI
 ) {
-  server.tool(
+  server.registerTool(
     "search-posts",
-    "Search for posts across the Paragraph platform",
-    {
-      query: searchPostsQueryParams.shape.q.unwrap().describe("Search query"),
-    },
     {
       title: "Search posts",
-      readOnlyHint: true,
-      destructiveHint: false,
-      idempotentHint: true,
-      openWorldHint: false,
+      description: "Search for posts across the Paragraph platform",
+      inputSchema: {
+        query: searchPostsQueryParams.shape.q.unwrap().describe("Search query"),
+      },
+      annotations: {
+        readOnlyHint: true,
+        destructiveHint: false,
+        idempotentHint: true,
+        openWorldHint: false,
+      },
     },
     async (params) => {
       try {
@@ -35,18 +37,20 @@ export function registerSearchTools(
     }
   );
 
-  server.tool(
+  server.registerTool(
     "search-blogs",
-    "Search for publications/blogs across the Paragraph platform",
-    {
-      query: searchBlogsQueryParams.shape.q.unwrap().describe("Search query"),
-    },
     {
       title: "Search publications",
-      readOnlyHint: true,
-      destructiveHint: false,
-      idempotentHint: true,
-      openWorldHint: false,
+      description: "Search for publications/blogs across the Paragraph platform",
+      inputSchema: {
+        query: searchBlogsQueryParams.shape.q.unwrap().describe("Search query"),
+      },
+      annotations: {
+        readOnlyHint: true,
+        destructiveHint: false,
+        idempotentHint: true,
+        openWorldHint: false,
+      },
     },
     async (params) => {
       try {
@@ -59,18 +63,20 @@ export function registerSearchTools(
     }
   );
 
-  server.tool(
+  server.registerTool(
     "search-coins",
-    "Search for coins/tokens across the Paragraph platform",
-    {
-      query: searchCoinsQueryParams.shape.q.unwrap().describe("Search query"),
-    },
     {
       title: "Search coins",
-      readOnlyHint: true,
-      destructiveHint: false,
-      idempotentHint: true,
-      openWorldHint: false,
+      description: "Search for coins/tokens across the Paragraph platform",
+      inputSchema: {
+        query: searchCoinsQueryParams.shape.q.unwrap().describe("Search query"),
+      },
+      annotations: {
+        readOnlyHint: true,
+        destructiveHint: false,
+        idempotentHint: true,
+        openWorldHint: false,
+      },
     },
     async (params) => {
       try {

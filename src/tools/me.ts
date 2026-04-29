@@ -6,16 +6,19 @@ export function registerMeTools(
   server: McpServer,
   getApi: () => ParagraphAPI
 ) {
-  server.tool(
+  server.registerTool(
     "get-me",
-    "Get the publication associated with the authenticated API key. Requires API key.",
-    {},
     {
       title: "Get my publication",
-      readOnlyHint: true,
-      destructiveHint: false,
-      idempotentHint: true,
-      openWorldHint: false,
+      description:
+        "Get the publication associated with the authenticated API key. Requires API key.",
+      inputSchema: {},
+      annotations: {
+        readOnlyHint: true,
+        destructiveHint: false,
+        idempotentHint: true,
+        openWorldHint: false,
+      },
     },
     async () => {
       try {

@@ -8,25 +8,28 @@ export function registerFeedTools(
   server: McpServer,
   getApi: () => ParagraphAPI
 ) {
-  server.tool(
+  server.registerTool(
     "get-feed",
-    "Get the curated feed of posts from across the Paragraph platform",
-    {
-      limit: getPostsFeedQueryParams.shape.limit.describe(
-        "Number of feed items to return (default: 10). Keep this small to avoid oversized responses — use pagination to retrieve more."
-      ),
-      cursor: getPostsFeedQueryParams.shape.cursor,
-      includeContent: getPostsFeedQueryParams.shape.includeContent
-        .unwrap()
-        .default(false)
-        .describe("Include post content as markdown (default: false)"),
-    },
     {
       title: "Get feed",
-      readOnlyHint: true,
-      destructiveHint: false,
-      idempotentHint: true,
-      openWorldHint: false,
+      description:
+        "Get the curated feed of posts from across the Paragraph platform",
+      inputSchema: {
+        limit: getPostsFeedQueryParams.shape.limit.describe(
+          "Number of feed items to return (default: 10). Keep this small to avoid oversized responses — use pagination to retrieve more."
+        ),
+        cursor: getPostsFeedQueryParams.shape.cursor,
+        includeContent: getPostsFeedQueryParams.shape.includeContent
+          .unwrap()
+          .default(false)
+          .describe("Include post content as markdown (default: false)"),
+      },
+      annotations: {
+        readOnlyHint: true,
+        destructiveHint: false,
+        idempotentHint: true,
+        openWorldHint: false,
+      },
     },
     async (params) => {
       try {
