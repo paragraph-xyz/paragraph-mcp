@@ -12,13 +12,14 @@ const ALL_TOOL_NAMES = [
   "get-feed",
   "get-me",
   "analytics-query", "analytics-schema",
+  "send-custom-email",
 ];
 
 describe("tool registration", () => {
   let client: Client;
   afterEach(async () => { await client?.close(); });
 
-  it("registers all 22 tools", async () => {
+  it("registers all 23 tools", async () => {
     ({ client } = await createTestClient());
     const { tools } = await client.listTools();
     expect(tools.map((t) => t.name).sort()).toEqual([...ALL_TOOL_NAMES].sort());

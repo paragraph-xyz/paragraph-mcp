@@ -39,7 +39,7 @@
   "dependencies": {
     "@cloudflare/workers-oauth-provider": "^0.3.1",
     "@modelcontextprotocol/sdk": "^1.12.1",
-    "@paragraph-com/sdk": "^2.1.0",
+    "@paragraph-com/sdk": "^2.2.0",
     "@whetstone-research/doppler-sdk": "^0.0.1-alpha.62",
     "agents": "^0.8.7",
     "doppler-router": "^1.0.15",
