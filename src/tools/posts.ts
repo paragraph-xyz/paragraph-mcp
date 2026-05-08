@@ -333,6 +333,12 @@ export function registerPostTools(
           POST_PREVIEW_DESCRIPTION
         ),
         categories: updatePostBody.shape.categories,
+        imageUrl: updatePostBody.shape.imageUrl.describe(
+          "URL of an image to set as the post's cover/hero image. The URL is fetched server-side, re-hosted on Paragraph's CDN, and a placeholder is generated. Pass clearImage instead to remove the existing cover."
+        ),
+        clearImage: updatePostBody.shape.clearImage.describe(
+          "Set to true to remove the post's existing cover/hero image. Ignored if imageUrl is also provided. Confirm with the user before clearing."
+        ),
       },
       annotations: {
         readOnlyHint: false,
