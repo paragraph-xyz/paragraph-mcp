@@ -309,11 +309,11 @@ export function registerPostTools(
       inputSchema: {
         id: updatePostParams.shape.postId
           .optional()
-          .describe("Post ID (use id or slug, not both)"),
+          .describe("Post ID. Provide id or slug; if both are given, id is used."),
         slug: updatePostBySlugParams.shape.slug
           .optional()
           .describe(
-            "Post slug used to identify the post (use id or slug, not both). To rename the slug, see `newSlug`."
+            "Post slug used to identify the post. Provide id or slug; if both are given, id takes precedence and slug is ignored. To rename the slug, see `newSlug`."
           ),
         newSlug: updatePostBody.shape.slug.describe(
           "New slug to rename the post to. Requires identifying the post by `id`, not `slug`. Changes the public URL and breaks existing links / SEO — confirm with the user before renaming a published post."
@@ -350,13 +350,10 @@ export function registerPostTools(
     async (params) => {
       const { id, slug, newSlug, ...rest } = params;
 
-      if (id && slug) {
-        return error("Provide either id or slug, not both");
-      }
       if (!id && !slug) {
-        return error("Provide either id or slug");
+        return error("Provide id or slug");
       }
-      if (slug && newSlug !== undefined) {
+      if (!id && slug && newSlug !== undefined) {
         return error(
           "Cannot rename the slug when identifying the post by slug (the request path would target the new slug before it exists). Identify the post by id instead — look it up with get-post if needed."
         );
