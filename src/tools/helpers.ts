@@ -15,8 +15,16 @@ export function error(text: string) {
  */
 export function toError(err: unknown) {
   if (err instanceof ParagraphApiError) {
-    const data = err.data as { message?: string } | undefined;
-    const serverMsg = data?.message || err.message;
+    // The public API returns its message under `msg` (apiError responses) or
+    // `message`/`error` (validation errors); `err.message` is only the generic
+    // "Request failed with status N". Check the body fields first so detailed
+    // errors — like the 409 telling the agent a writer edited the post in the
+    // editor and to re-read it — actually reach the agent (PAR-9436).
+    const data = err.data as
+      | { msg?: string; message?: string; error?: string }
+      | undefined;
+    const serverMsg =
+      data?.msg || data?.message || data?.error || err.message;
     if (err.status === 401) {
       return error(
         "Unauthorized. Your API key is invalid, expired, or missing. Get a new key at paragraph.com/settings → Publication → Developer."
