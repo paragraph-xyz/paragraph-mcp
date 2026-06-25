@@ -58,6 +58,51 @@ export function stripHeavyContent<T>(post: T): T {
   return post;
 }
 
+/**
+ * Strip only the bulky staticHtml, KEEPING the Tiptap `json`. Used for single
+ * `get-post` reads so the agent can see and preserve non-markdown blocks
+ * (buttons, linked images) it would otherwise be blind to — markdown alone has
+ * no way to represent them (PAR-9429). List responses still use
+ * {@link stripHeavyContent} to keep payloads small.
+ */
+export function stripHeavyContentExceptJson<T>(post: T): T {
+  if (post && typeof post === "object") {
+    const { staticHtml, ...rest } = post as Record<string, unknown>;
+    return rest as T;
+  }
+  return post;
+}
+
+const BUTTON_NODE_TYPES = ["customButton", "subscribeButton", "shareButton"];
+
+/**
+ * True when a stored Tiptap document contains button nodes markdown cannot
+ * represent. Used to block a markdown overwrite that would silently delete them
+ * — the agent should send `bodyJson` instead (PAR-9429). Best-effort: an
+ * unparseable document returns false rather than blocking a legitimate edit.
+ */
+export function tiptapJsonHasButtons(json: unknown): boolean {
+  if (typeof json !== "string" || !json) return false;
+  let doc: unknown;
+  try {
+    doc = JSON.parse(json);
+  } catch {
+    return false;
+  }
+  let found = false;
+  const walk = (node: unknown): void => {
+    if (found || !node || typeof node !== "object") return;
+    const n = node as { type?: unknown; content?: unknown };
+    if (typeof n.type === "string" && BUTTON_NODE_TYPES.includes(n.type)) {
+      found = true;
+      return;
+    }
+    if (Array.isArray(n.content)) n.content.forEach(walk);
+  };
+  walk(doc);
+  return found;
+}
+
 /** Return an MCP success response with JSON-serialized data. */
 export function json(data: unknown) {
   return {
