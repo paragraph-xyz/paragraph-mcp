@@ -1163,11 +1163,13 @@ __metadata:
     "@cloudflare/workers-types": ^4.20250313.0
     "@modelcontextprotocol/sdk": ^1.12.1
     "@paragraph-com/sdk": ^2.2.1
+    "@posthog/mcp": 0.3.0
     "@types/node": ^20.0.0
     "@whetstone-research/doppler-sdk": ^0.0.1-alpha.62
     agents: ^0.8.7
     doppler-router: ^1.0.15
     hono: ^4.12.9
+    posthog-node: ^5.0.0
     tsup: ^8.3.5
     typescript: ^5.0.0
     viem: ^2.40.3
@@ -1224,6 +1226,34 @@ __metadata:
   version: 1.2.3
   resolution: "@poppinss/exception@npm:1.2.3"
   checksum: 414a536a8666b2cb6c8ae5460c107e58de4ce2ac5cae42d2a5ec432119f415bf8b6780703e8f6d34faf36b433c47f2bb821cc48f3d1d5f14ab22b0e36e4175a1
+  languageName: node
+  linkType: hard
+
+"@posthog/core@npm:^1.33.0, @posthog/core@npm:^1.39.5":
+  version: 1.39.6
+  resolution: "@posthog/core@npm:1.39.6"
+  dependencies:
+    "@posthog/types": ^1.392.0
+  checksum: bbd3135c0a5ee9a295c4ae76d0f739be2fb620ac542993d79d48d9a2a356f62bcce7a1a6e80edd6840978e69f48eec572ca8a43678592224c7a8d3a05ece3a25
+  languageName: node
+  linkType: hard
+
+"@posthog/mcp@npm:0.3.0":
+  version: 0.3.0
+  resolution: "@posthog/mcp@npm:0.3.0"
+  dependencies:
+    "@posthog/core": ^1.33.0
+  peerDependencies:
+    "@modelcontextprotocol/sdk": ">=1.26.0"
+    posthog-node: ^5.0.0
+  checksum: ebe3237ef6ad0e4503e6f46add830e0bffb8b9f6ffffda80db83e0808c02189b856df94de124fb1ae95c00ab6c3796b7fa6db42a8ba4d4f33fb36b9d7cd08526
+  languageName: node
+  linkType: hard
+
+"@posthog/types@npm:^1.392.0":
+  version: 1.392.1
+  resolution: "@posthog/types@npm:1.392.1"
+  checksum: 9d75e654973eae9a7d55115dc4e8ba430fec14fbdfb20bf3685dcc0e64a7dfc322acfe10bc651f5148c2c272fdcbd95e71fc3d6f20ed29d707908ed844d0dc4b
   languageName: node
   linkType: hard
 
@@ -3636,6 +3666,20 @@ __metadata:
     picocolors: ^1.1.1
     source-map-js: ^1.2.1
   checksum: 118cbec9551c7107c7884a585b45d7cce1632159065c7f6e112bbb4c4811253e78d507e49082b36d9b89f36a02a611c5a8cd210548dead55795c20c4f37ab9e8
+  languageName: node
+  linkType: hard
+
+"posthog-node@npm:^5.0.0":
+  version: 5.39.4
+  resolution: "posthog-node@npm:5.39.4"
+  dependencies:
+    "@posthog/core": ^1.39.5
+  peerDependencies:
+    rxjs: ^7.0.0
+  peerDependenciesMeta:
+    rxjs:
+      optional: true
+  checksum: 0e6459336916b60145cef2f403c3c9698f4ab2aa164dbf9943a7eaff21071098125f0ff5e7136e8bb49bba60701d05322c4e0931c7ab423c0c47342d5c661433
   languageName: node
   linkType: hard
 

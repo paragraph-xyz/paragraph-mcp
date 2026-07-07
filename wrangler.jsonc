@@ -2,7 +2,7 @@
   "name": "paragraph-mcp",
   "main": "src/worker.ts",
   "compatibility_date": "2025-03-10",
-  "compatibility_flags": ["nodejs_compat"],
+  "compatibility_flags": ["nodejs_compat", "nodejs_compat_populate_process_env"],
 
   "routes": [
     { "pattern": "mcp.paragraph.com", "custom_domain": true }
@@ -14,6 +14,8 @@
 
   // Set via `wrangler secret put`:
   // - COOKIE_ENCRYPTION_KEY
+  // - POSTHOG_PROJECT_API_KEY
+  // - POSTHOG_HOST
 
   "observability": { "enabled": true },
 

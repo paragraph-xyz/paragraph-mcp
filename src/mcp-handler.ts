@@ -1,15 +1,82 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { WebStandardStreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js";
 import { ParagraphAPI } from "@paragraph-com/sdk";
-import { instrument } from "@posthog/mcp";
-import { PostHog } from "posthog-node";
+import { instrument, type BeforeSendFn } from "@posthog/mcp";
+import type { PostHog, EventMessage } from "posthog-node";
 import { PARAGRAPH_SERVER_INSTRUCTIONS } from "./instructions.js";
 import { registerTools } from "./tools/index.js";
 import { VERSION } from "./version.js";
 
-const posthog = new PostHog(process.env.POSTHOG_PROJECT_API_KEY ?? "", {
-  host: process.env.POSTHOG_HOST ?? "https://us.i.posthog.com",
-});
+const POSTHOG_PROJECT_API_KEY = process.env.POSTHOG_PROJECT_API_KEY ?? "";
+const POSTHOG_HOST = process.env.POSTHOG_HOST ?? "https://us.i.posthog.com";
+const beforeSendMcpEvent: BeforeSendFn = (event) => {
+  if (event.event !== "$mcp_tools_list") {
+    return event;
+  }
+
+  const next = { ...event, properties: { ...event.properties } };
+  delete next.properties.$mcp_response;
+  return next;
+};
+const pendingPostHogEvents: EventMessage[] = [];
+const posthogCaptureSink = {
+  capture(event: EventMessage) {
+    pendingPostHogEvents.push(event);
+  },
+} as PostHog;
+
+async function capturePostHogEvent(event: EventMessage) {
+  if (!POSTHOG_PROJECT_API_KEY) {
+    return;
+  }
+
+  const properties = { ...event.properties };
+  if (event.groups && Object.keys(event.groups).length > 0) {
+    properties.$groups ??= event.groups;
+  }
+  if (event.uuid) {
+    properties.$insert_id ??= event.uuid;
+  }
+
+  const response = await fetch(
+    `${POSTHOG_HOST.replace(/\/$/, "")}/capture/`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        api_key: POSTHOG_PROJECT_API_KEY,
+        event: event.event,
+        distinct_id: event.distinctId ?? "anonymous",
+        properties,
+        timestamp: event.timestamp?.toISOString(),
+      }),
+    }
+  );
+
+  if (!response.ok) {
+    const body = await response.text().catch(() => "");
+    throw new Error(
+      `PostHog capture failed with ${response.status}: ${body.slice(0, 500)}`
+    );
+  }
+}
+
+async function flushPostHogAfterCapture() {
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  const events = pendingPostHogEvents.splice(0);
+  const results = await Promise.allSettled(events.map(capturePostHogEvent));
+
+  for (const result of results) {
+    if (result.status === "rejected") {
+      console.error("[posthog] capture failed", {
+        error:
+          result.reason instanceof Error
+            ? result.reason.message
+            : String(result.reason),
+      });
+    }
+  }
+}
 
 export interface Props {
   apiKey: string;
@@ -22,8 +89,6 @@ export function createParagraphMcpServer(apiKey: string) {
     instructions: PARAGRAPH_SERVER_INSTRUCTIONS,
   });
 
-  instrument(server, posthog);
-
   let api: ParagraphAPI | null = null;
   const getApi = () => {
     if (!api) {
@@ -33,6 +98,7 @@ export function createParagraphMcpServer(apiKey: string) {
   };
 
   registerTools(server, getApi);
+  instrument(server, posthogCaptureSink, { beforeSend: beforeSendMcpEvent });
   return server;
 }
 
@@ -105,7 +171,7 @@ export const mcpHandler = {
         });
         await server.connect(transport);
         const response = await transport.handleRequest(request);
-        ctx.waitUntil(posthog.flush());
+        ctx.waitUntil(flushPostHogAfterCapture());
         return response;
       } catch (err) {
         console.error("[mcp] handler error", {

@@ -2,7 +2,7 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import { ParagraphAPI } from "@paragraph-com/sdk";
-import { instrument } from "@posthog/mcp";
+import { instrument, type BeforeSendFn } from "@posthog/mcp";
 import { createServer } from "http";
 import { PostHog } from "posthog-node";
 import { resolveApiKey } from "./config.js";
@@ -13,6 +13,15 @@ import { VERSION } from "./version.js";
 const posthog = new PostHog(process.env.POSTHOG_PROJECT_API_KEY ?? "", {
   host: process.env.POSTHOG_HOST ?? "https://us.i.posthog.com",
 });
+const beforeSendMcpEvent: BeforeSendFn = (event) => {
+  if (event.event !== "$mcp_tools_list") {
+    return event;
+  }
+
+  const next = { ...event, properties: { ...event.properties } };
+  delete next.properties.$mcp_response;
+  return next;
+};
 
 function parseArgs() {
   const args = process.argv.slice(2);
@@ -95,8 +104,6 @@ function createMcpServer(toolsets?: Toolset[]) {
     instructions: PARAGRAPH_SERVER_INSTRUCTIONS,
   });
 
-  instrument(server, posthog);
-
   // Lazy API client — created once per server, re-uses the same key
   let api: ParagraphAPI | null = null;
   const getApi = () => {
@@ -107,6 +114,7 @@ function createMcpServer(toolsets?: Toolset[]) {
   };
 
   registerTools(server, getApi, toolsets);
+  instrument(server, posthog, { beforeSend: beforeSendMcpEvent });
 
   return server;
 }
