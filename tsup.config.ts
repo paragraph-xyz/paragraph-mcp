@@ -26,6 +26,8 @@ export default defineConfig({
   noExternal: [
     "@paragraph-com/sdk",
     "@modelcontextprotocol/sdk",
+    "@posthog/mcp",
+    "posthog-node",
     "zod",
   ],
   banner: {

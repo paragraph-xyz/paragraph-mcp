@@ -1,9 +1,15 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { WebStandardStreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js";
 import { ParagraphAPI } from "@paragraph-com/sdk";
+import { instrument } from "@posthog/mcp";
+import { PostHog } from "posthog-node";
 import { PARAGRAPH_SERVER_INSTRUCTIONS } from "./instructions.js";
 import { registerTools } from "./tools/index.js";
 import { VERSION } from "./version.js";
+
+const posthog = new PostHog(process.env.POSTHOG_PROJECT_API_KEY ?? "", {
+  host: process.env.POSTHOG_HOST ?? "https://us.i.posthog.com",
+});
 
 export interface Props {
   apiKey: string;
@@ -15,6 +21,8 @@ export function createParagraphMcpServer(apiKey: string) {
     version: VERSION,
     instructions: PARAGRAPH_SERVER_INSTRUCTIONS,
   });
+
+  instrument(server, posthog);
 
   let api: ParagraphAPI | null = null;
   const getApi = () => {
@@ -96,7 +104,9 @@ export const mcpHandler = {
           enableJsonResponse: true,
         });
         await server.connect(transport);
-        return transport.handleRequest(request);
+        const response = await transport.handleRequest(request);
+        ctx.waitUntil(posthog.flush());
+        return response;
       } catch (err) {
         console.error("[mcp] handler error", {
           error: err instanceof Error ? err.message : String(err),

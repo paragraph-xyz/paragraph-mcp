@@ -2,11 +2,17 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import { ParagraphAPI } from "@paragraph-com/sdk";
+import { instrument } from "@posthog/mcp";
 import { createServer } from "http";
+import { PostHog } from "posthog-node";
 import { resolveApiKey } from "./config.js";
 import { PARAGRAPH_SERVER_INSTRUCTIONS } from "./instructions.js";
 import { registerTools, ALL_TOOLSETS, type Toolset } from "./tools/index.js";
 import { VERSION } from "./version.js";
+
+const posthog = new PostHog(process.env.POSTHOG_PROJECT_API_KEY ?? "", {
+  host: process.env.POSTHOG_HOST ?? "https://us.i.posthog.com",
+});
 
 function parseArgs() {
   const args = process.argv.slice(2);
@@ -89,6 +95,8 @@ function createMcpServer(toolsets?: Toolset[]) {
     instructions: PARAGRAPH_SERVER_INSTRUCTIONS,
   });
 
+  instrument(server, posthog);
+
   // Lazy API client — created once per server, re-uses the same key
   let api: ParagraphAPI | null = null;
   const getApi = () => {
@@ -162,6 +170,11 @@ async function main() {
     await startStdio(toolsets);
   }
 }
+
+process.on("SIGTERM", async () => {
+  await posthog.shutdown();
+  process.exit(0);
+});
 
 main().catch((err) => {
   console.error("Fatal error:", err);
