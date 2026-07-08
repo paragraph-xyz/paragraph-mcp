@@ -10,8 +10,9 @@ export function error(text: string) {
 /**
  * Map a caught error to an MCP error response with explicit recovery guidance
  * for the calling agent. Recognises ParagraphApiError status codes (401/403/404/429)
- * and points at the tools an agent can call next. Falls back to the raw message
- * for everything else.
+ * and points at the tools an agent can call next. Client-side 4xx return an
+ * `isError` result the agent can recover from; genuine failures (5xx, or any
+ * non-ParagraphApiError) rethrow so PostHog captures them as real exceptions.
  */
 export function toError(err: unknown) {
   if (err instanceof ParagraphApiError) {
@@ -44,9 +45,14 @@ export function toError(err: unknown) {
     if (err.status === 429) {
       return error("Rate limited. Wait a moment and retry.");
     }
-    return error(serverMsg || "Request failed.");
+    if (err.status >= 400 && err.status < 500) {
+      return error(serverMsg || "Request failed.");
+    }
   }
-  return error(String(err instanceof Error ? err.message : err));
+  // 5xx and non-ParagraphApiError failures are genuine, not agent-recoverable.
+  // Rethrow so PostHog captures them as real exceptions instead of hiding them
+  // among the expected 4xx noise the agent handles.
+  throw err;
 }
 
 /** Strip staticHtml and json fields from post objects — markdown is sufficient for LLMs. */
