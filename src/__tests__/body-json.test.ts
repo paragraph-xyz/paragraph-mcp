@@ -102,21 +102,33 @@ describe("bodyJson on update-post / create-post (PAR-9429)", () => {
     expect(ctx.updateCalls[0]).toEqual({ id: "p_1", bodyJson: DOC_WITH_BUTTON });
   });
 
-  it("update-post rejects markdown + bodyJson together, no API call", async () => {
+  it("update-post does not advertise a markdown param (PAR-9923)", async () => {
     const ctx = await setup();
+    client = ctx.client;
+
+    const { tools } = await client.listTools();
+    const update = tools.find((t) => t.name === "update-post");
+
+    expect(update).toBeDefined();
+    expect(update?.inputSchema.properties).toHaveProperty("bodyJson");
+    expect(update?.inputSchema.properties).not.toHaveProperty("markdown");
+  });
+
+  it("update-post never forwards markdown to the API (PAR-9923)", async () => {
+    const ctx = await setup({ json: DOC_WITH_BUTTON });
     client = ctx.client;
 
     const res = await client.callTool({
       name: "update-post",
-      arguments: { id: "p_1", markdown: "# hi", bodyJson: DOC_PLAIN },
+      arguments: { id: "p_1", title: "T", markdown: "# rewritten" },
     });
 
-    expect(res.isError).toBe(true);
-    expect(textOf(res)).toContain("not both");
-    expect(ctx.updateCalls).toHaveLength(0);
+    expect(res.isError).toBeFalsy();
+    expect(ctx.updateCalls).toHaveLength(1);
+    expect(ctx.updateCalls[0]).toEqual({ id: "p_1", title: "T" });
   });
 
-  it("Guard B: markdown overwrite of a button-bearing post is blocked", async () => {
+  it("update-post errors rather than silently no-op'ing a markdown-only edit", async () => {
     const ctx = await setup({ json: DOC_WITH_BUTTON });
     client = ctx.client;
 
@@ -128,20 +140,6 @@ describe("bodyJson on update-post / create-post (PAR-9429)", () => {
     expect(res.isError).toBe(true);
     expect(textOf(res)).toContain("bodyJson");
     expect(ctx.updateCalls).toHaveLength(0);
-  });
-
-  it("Guard B: markdown update of a button-free post proceeds", async () => {
-    const ctx = await setup({ json: DOC_PLAIN });
-    client = ctx.client;
-
-    const res = await client.callTool({
-      name: "update-post",
-      arguments: { id: "p_1", markdown: "# rewritten" },
-    });
-
-    expect(res.isError).toBeFalsy();
-    expect(ctx.updateCalls).toHaveLength(1);
-    expect(ctx.updateCalls[0]).toEqual({ id: "p_1", markdown: "# rewritten" });
   });
 
   it("get-post returns the Tiptap json, strips staticHtml", async () => {

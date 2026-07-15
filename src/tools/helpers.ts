@@ -79,36 +79,6 @@ export function stripHeavyContentExceptJson<T>(post: T): T {
   return post;
 }
 
-const BUTTON_NODE_TYPES = ["customButton", "subscribeButton", "shareButton"];
-
-/**
- * True when a stored Tiptap document contains button nodes markdown cannot
- * represent. Used to block a markdown overwrite that would silently delete them
- * — the agent should send `bodyJson` instead (PAR-9429). Best-effort: an
- * unparseable document returns false rather than blocking a legitimate edit.
- */
-export function tiptapJsonHasButtons(json: unknown): boolean {
-  if (typeof json !== "string" || !json) return false;
-  let doc: unknown;
-  try {
-    doc = JSON.parse(json);
-  } catch {
-    return false;
-  }
-  let found = false;
-  const walk = (node: unknown): void => {
-    if (found || !node || typeof node !== "object") return;
-    const n = node as { type?: unknown; content?: unknown };
-    if (typeof n.type === "string" && BUTTON_NODE_TYPES.includes(n.type)) {
-      found = true;
-      return;
-    }
-    if (Array.isArray(n.content)) n.content.forEach(walk);
-  };
-  walk(doc);
-  return found;
-}
-
 /** Return an MCP success response with JSON-serialized data. */
 export function json(data: unknown) {
   return {
