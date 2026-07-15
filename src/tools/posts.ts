@@ -34,9 +34,6 @@ export type PostUrls = Partial<Pick<GetPostById200, "id" | "slug" | "status">> &
 const POST_PREVIEW_DESCRIPTION =
   "Preview text used as the meta description in social cards, search results, and archive listings. Keep under 145 characters so it renders without truncation in Google, X, and Farcaster link previews.";
 
-const MARKDOWN_XOR_BODYJSON_MSG =
-  "Provide either markdown or bodyJson, not both";
-
 /** What a Tiptap document is, shared by create-post and update-post. */
 const BODY_JSON_SHAPE =
   'A JSON-stringified Tiptap document (e.g. \'{"type":"doc","content":[...]}\'). It accepts ANY node the editor supports — paragraphs and headings, but also `link` marks and the `youtube`, `twitter`, `embedly`, callout, and button nodes — so a document you read back from get-post round-trips with all of them intact. Marks live in a `marks` array on `text` nodes ({"type":"italic"}, not "em"; a `link` needs an absolute attrs.href) and children go in `content`. Button node shapes: custom CTA → {"type":"customButton","attrs":{"href":"https://..."},"content":[{"type":"text","text":"<label>"}]} (href must be an absolute URL); subscribe → {"type":"subscribeButton"}; share → {"type":"shareButton"}. Replaces the whole body and is validated server-side; an invalid document is rejected with a node-pathed error — fix that node and retry.';
@@ -308,7 +305,7 @@ export function registerPostTools(
     },
     async (params) => {
       if (params.markdown !== undefined && params.bodyJson !== undefined) {
-        return error(MARKDOWN_XOR_BODYJSON_MSG);
+        return error("Provide either markdown or bodyJson, not both");
       }
       if (params.markdown === undefined && params.bodyJson === undefined) {
         return error("Provide either markdown or bodyJson");
@@ -391,12 +388,10 @@ export function registerPostTools(
       }
       const body = newSlug !== undefined ? { ...rest, slug: newSlug } : rest;
 
-      // An update that carries no updatable field would report success while
-      // changing nothing. The likeliest way to get here is a `markdown` arg:
-      // this tool has no such param (bodyJson is the only body channel, PAR-9923)
-      // so an unknown key is dropped during input validation and never reaches
-      // the API — without this, that lands as a silent no-op the agent reports
-      // as a saved edit.
+      // Unknown args are stripped during input validation, so a `markdown` arg
+      // (this tool has none — bodyJson is the only body channel, PAR-9923) would
+      // otherwise reach the API as an empty update: a silent no-op the agent
+      // reports as a saved edit.
       if (Object.keys(body).length === 0) {
         return error(
           "No updatable fields were provided, so nothing was changed. To edit the post's body, call get-post to read its `json`, edit that document, and send it back as `bodyJson` — this tool does not accept `markdown`."
