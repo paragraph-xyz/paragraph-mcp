@@ -23,7 +23,6 @@ import {
   PARAGRAPH_FRONTEND,
   stripHeavyContent,
   stripHeavyContentExceptJson,
-  tiptapJsonHasButtons,
   toError,
 } from "./helpers.js";
 
@@ -35,11 +34,13 @@ export type PostUrls = Partial<Pick<GetPostById200, "id" | "slug" | "status">> &
 const POST_PREVIEW_DESCRIPTION =
   "Preview text used as the meta description in social cards, search results, and archive listings. Keep under 145 characters so it renders without truncation in Google, X, and Farcaster link previews.";
 
-const MARKDOWN_XOR_BODYJSON_MSG =
-  "Provide either markdown or bodyJson, not both";
+/** What a Tiptap document is, shared by create-post and update-post. */
+const BODY_JSON_SHAPE =
+  'A JSON-stringified Tiptap document (e.g. \'{"type":"doc","content":[...]}\'). It accepts ANY node the editor supports — paragraphs and headings, but also `link` marks and the `youtube`, `twitter`, `embedly`, callout, and button nodes — so a document you read back from get-post round-trips with all of them intact. Marks live in a `marks` array on `text` nodes ({"type":"italic"}, not "em"; a `link` needs an absolute attrs.href) and children go in `content`. Button node shapes: custom CTA → {"type":"customButton","attrs":{"href":"https://..."},"content":[{"type":"text","text":"<label>"}]} (href must be an absolute URL); subscribe → {"type":"subscribeButton"}; share → {"type":"shareButton"}. Replaces the whole body and is validated server-side; an invalid document is rejected with a node-pathed error — fix that node and retry.';
 
-const BODY_JSON_DESCRIPTION =
-  'Post body as a JSON-stringified Tiptap document (e.g. \'{"type":"doc","content":[...]}\'). Use this INSTEAD of markdown when the post needs blocks markdown cannot express — Subscribe/Share/custom buttons or linked images — so they are preserved. To edit a post that already has buttons, first call get-post to read its `json`, modify that document, and send it back here. Replaces the whole body and is validated server-side (an invalid document is rejected with a node-pathed error — fix it and retry as bodyJson, never fall back to markdown). Button node shapes: custom CTA → {"type":"customButton","attrs":{"href":"https://..."},"content":[{"type":"text","text":"<label>"}]} (href must be an absolute URL); subscribe → {"type":"subscribeButton"}; share → {"type":"shareButton"}. Provide markdown OR bodyJson, not both.';
+const CREATE_BODY_JSON_DESCRIPTION = `Post body as a Tiptap document. ${BODY_JSON_SHAPE} Use this instead of markdown whenever the new post needs links, embeds, or buttons; plain prose can use markdown. Provide markdown OR bodyJson, not both.`;
+
+const UPDATE_BODY_JSON_DESCRIPTION = `Post body as a Tiptap document — the only way to change a post's body. ${BODY_JSON_SHAPE} Call get-post first to read the post's current \`json\`, edit that document, and send the whole thing back here: this tool replaces the entire body, and the server refuses a body change you did not read first (or that the writer has edited since). Keep every node you were not asked to change exactly as-is, and never invent a URL or video id — copy the exact ones from get-post.`;
 
 function buildPublicUrl(
   publication: Pick<GetMe200, "slug" | "customDomain">,
@@ -148,7 +149,7 @@ export function registerPostTools(
           .unwrap()
           .default(true)
           .describe(
-            "Include post content (default: true). Returns both `markdown` and the Tiptap `json` document. Read `json` before editing a post that has buttons or linked images, then send the edited document back via update-post's bodyJson so those blocks are preserved."
+            "Include post content (default: true). Returns the Tiptap `json` document plus a lossy `markdown` rendering of it. Always read `json` before editing — it is the real document, with the exact text, hyperlinks, and any embedded videos, tweets, cards, and buttons that `markdown` drops. Edit that document and send it back via update-post's bodyJson."
           ),
       },
       annotations: {
@@ -270,7 +271,7 @@ export function registerPostTools(
     {
       title: "Create post",
       description:
-        "Create a post in your publication. Defaults to a draft — set status to 'published' only with explicit user approval, as this makes the post publicly visible. Set scheduledAt to a future Unix ms timestamp to schedule first-publish — confirm with the user before scheduling, as the post will be published automatically at the scheduled time. Requires API key. Provide the body as either markdown (normal prose) or bodyJson (a Tiptap document, for posts that need Subscribe/Share/custom buttons or linked images), but not both. Do not set sendNewsletter to true without explicit user approval — it emails all subscribers and cannot be undone.",
+        "Create a post in your publication. Defaults to a draft — set status to 'published' only with explicit user approval, as this makes the post publicly visible. Set scheduledAt to a future Unix ms timestamp to schedule first-publish — confirm with the user before scheduling, as the post will be published automatically at the scheduled time. Requires API key. Provide the body as either markdown (plain prose the server converts to rich content) or bodyJson (a Tiptap document — use it when the post needs links, embedded videos, tweets, cards, or buttons), but not both. Note that editing a post later is bodyJson-only, via update-post. Do not set sendNewsletter to true without explicit user approval — it emails all subscribers and cannot be undone.",
       inputSchema: {
         title: createPostBody.shape.title.describe("Post title"),
         markdown: createPostBody.shape.markdown
@@ -278,7 +279,7 @@ export function registerPostTools(
           .describe(
             "Post content in markdown format. Provide markdown OR bodyJson, not both."
           ),
-        bodyJson: z.string().optional().describe(BODY_JSON_DESCRIPTION),
+        bodyJson: z.string().optional().describe(CREATE_BODY_JSON_DESCRIPTION),
         subtitle: createPostBody.shape.subtitle,
         slug: createPostBody.shape.slug,
         imageUrl: createPostBody.shape.imageUrl,
@@ -304,7 +305,7 @@ export function registerPostTools(
     },
     async (params) => {
       if (params.markdown !== undefined && params.bodyJson !== undefined) {
-        return error(MARKDOWN_XOR_BODYJSON_MSG);
+        return error("Provide either markdown or bodyJson, not both");
       }
       if (params.markdown === undefined && params.bodyJson === undefined) {
         return error("Provide either markdown or bodyJson");
@@ -332,7 +333,7 @@ export function registerPostTools(
     {
       title: "Update post",
       description:
-        "Update an existing post by ID or slug. Only provided fields are updated — omit any field you don't want to change. Requires API key. Do NOT pass `status` unless you explicitly intend to change the publish state — and always confirm with the user before any status change: `status: 'published'` publishes the post, `status: 'draft'` unpublishes a live post, `status: 'archived'` archives. When updating other fields (title, markdown, categories, etc.) on a post, omit `status` entirely — do not echo back a value read from get-post/list-posts. Set scheduledAt to a future Unix ms timestamp to schedule first-publish (confirm with the user first — the post will publish automatically at the scheduled time); pass scheduledAt: null to cancel. Set publishedAt to a Unix ms timestamp to backdate (or post-date) the post's display date — once set, the value sticks across re-publishes.",
+        "Update an existing post by ID or slug. Only provided fields are updated — omit any field you don't want to change. Requires API key. To change the body, call get-post first and send the edited Tiptap document back as `bodyJson` — that is the only body channel, so a post's text, links, and embeds are always edited from the real document rather than a lossy copy. Do NOT pass `status` unless you explicitly intend to change the publish state — and always confirm with the user before any status change: `status: 'published'` publishes the post, `status: 'draft'` unpublishes a live post, `status: 'archived'` archives. When updating other fields (title, bodyJson, categories, etc.) on a post, omit `status` entirely — do not echo back a value read from get-post/list-posts. Set scheduledAt to a future Unix ms timestamp to schedule first-publish (confirm with the user first — the post will publish automatically at the scheduled time); pass scheduledAt: null to cancel. Set publishedAt to a Unix ms timestamp to backdate (or post-date) the post's display date — once set, the value sticks across re-publishes.",
       inputSchema: {
         id: updatePostParams.shape.postId
           .optional()
@@ -346,13 +347,10 @@ export function registerPostTools(
           "New slug to rename the post to. Requires identifying the post by `id`, not `slug`. Changes the public URL and breaks existing links / SEO — confirm with the user before renaming a published post."
         ),
         title: updatePostBody.shape.title,
-        markdown: updatePostBody.shape.markdown.describe(
-          "Post content in markdown format. Markdown cannot represent buttons or linked images — to edit a post that already has any, use bodyJson instead (a markdown overwrite of such a post is rejected). Provide markdown OR bodyJson, not both."
-        ),
-        bodyJson: z.string().optional().describe(BODY_JSON_DESCRIPTION),
+        bodyJson: z.string().optional().describe(UPDATE_BODY_JSON_DESCRIPTION),
         subtitle: updatePostBody.shape.subtitle,
         status: updatePostBody.shape.status.describe(
-          "OMIT unless explicitly changing publish state. Always confirm with the user before any status change. 'published' publishes; 'draft' unpublishes a live post; 'archived' archives. Do NOT pass this field when updating other fields like title or markdown — and never round-trip a value read from get-post/list-posts."
+          "OMIT unless explicitly changing publish state. Always confirm with the user before any status change. 'published' publishes; 'draft' unpublishes a live post; 'archived' archives. Do NOT pass this field when updating other fields like title or bodyJson — and never round-trip a value read from get-post/list-posts."
         ),
         scheduledAt: updatePostBody.shape.scheduledAt,
         publishedAt: updatePostBody.shape.publishedAt.describe(
@@ -388,30 +386,20 @@ export function registerPostTools(
           "Cannot rename the slug when identifying the post by slug (the request path would target the new slug before it exists). Identify the post by id instead — look it up with get-post if needed."
         );
       }
-      if (rest.markdown !== undefined && rest.bodyJson !== undefined) {
-        return error(MARKDOWN_XOR_BODYJSON_MSG);
-      }
-
       const body = newSlug !== undefined ? { ...rest, slug: newSlug } : rest;
+
+      // Unknown args are stripped during input validation, so a `markdown` arg
+      // (this tool has none — bodyJson is the only body channel, PAR-9923) would
+      // otherwise reach the API as an empty update: a silent no-op the agent
+      // reports as a saved edit.
+      if (Object.keys(body).length === 0) {
+        return error(
+          "No updatable fields were provided, so nothing was changed. To edit the post's body, call get-post to read its `json`, edit that document, and send it back as `bodyJson` — this tool does not accept `markdown`."
+        );
+      }
 
       try {
         const api = getApi();
-
-        // Guard B (PAR-9429): a markdown overwrite of a post that already has
-        // buttons would silently delete them. Block it and steer the agent to
-        // bodyJson. Only checked on the id path — the authenticated by-id read
-        // returns content for drafts, where the agent does most editing; the
-        // public by-slug read 404s on drafts so we can't reliably inspect it.
-        if (id && rest.markdown !== undefined && rest.bodyJson === undefined) {
-          const current = await api.posts
-            .get({ id }, { includeContent: true })
-            .single();
-          if (tiptapJsonHasButtons((current as { json?: unknown }).json)) {
-            return error(
-              "This post has buttons that markdown can't represent, so a markdown update would delete them. Call get-post to read the post's `json`, edit that document, then send it back via bodyJson instead."
-            );
-          }
-        }
 
         // `bodyJson` is forwarded ahead of the published SDK type (PAR-9429);
         // the SDK serializes the body verbatim, so it reaches the API even
