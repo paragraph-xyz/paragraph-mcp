@@ -42,6 +42,21 @@ const CREATE_BODY_JSON_DESCRIPTION = `Post body as a Tiptap document. ${BODY_JSO
 
 const UPDATE_BODY_JSON_DESCRIPTION = `Post body as a Tiptap document — the only way to change a post's body. ${BODY_JSON_SHAPE} Call get-post first to read the post's current \`json\`, edit that document, and send the whole thing back here: this tool replaces the entire body, and the server refuses a body change you did not read first (or that the writer has edited since). Keep every node you were not asked to change exactly as-is, and never invent a URL or video id — copy the exact ones from get-post.`;
 
+/**
+ * Declared locally rather than read off `updatePostBody.shape`, because the
+ * published SDK's generated types don't carry `authorIds` yet — the same
+ * forward-declaration the `bodyJson` params use (PAR-9429). The SDK serializes
+ * the body verbatim, so the field reaches the API regardless.
+ */
+const authorIdsSchema = z
+  .array(z.string())
+  .min(1)
+  .max(20)
+  .optional()
+  .describe(
+    "User ids to credit as the post's authors, in byline order. Replaces the whole byline, so include every author you want kept — call get-post first and start from its `authorIds`. Each id must be the publication's owner or an active team member; ids from outside the publication are rejected. No tool enumerates members, so an id has to come from a post you have read (`authorIds` on get-post, `authors[].id` on list-posts) or from the writer — ask rather than guessing. Confirm with the writer before re-attributing a post to someone else."
+  );
+
 function buildPublicUrl(
   publication: Pick<GetMe200, "slug" | "customDomain">,
   postSlug: string
@@ -287,6 +302,9 @@ export function registerPostTools(
           POST_PREVIEW_DESCRIPTION
         ),
         categories: createPostBody.shape.categories,
+        authorIds: authorIdsSchema.describe(
+          "User ids to credit as the post's authors, in byline order. Each id must be the publication's owner or an active team member; ids from outside the publication are rejected. Omit to credit the API key's own user, which is almost always what you want."
+        ),
         sendNewsletter: createPostBody.shape.sendNewsletter,
         scheduledAt: createPostBody.shape.scheduledAt,
         status: createPostBody.shape.status
@@ -361,6 +379,7 @@ export function registerPostTools(
           POST_PREVIEW_DESCRIPTION
         ),
         categories: updatePostBody.shape.categories,
+        authorIds: authorIdsSchema,
         imageUrl: updatePostBody.shape.imageUrl.describe(
           "URL of an image to set as the post's cover/hero image. The URL is fetched server-side, re-hosted on Paragraph's CDN, and a placeholder is generated. Pass clearImage instead to remove the existing cover."
         ),
