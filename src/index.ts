@@ -5,9 +5,9 @@ import { ParagraphAPI } from "@paragraph-com/sdk";
 import { instrument } from "@posthog/mcp";
 import { createServer } from "http";
 import { PostHog } from "posthog-node";
+import { buildAnalyticsOptions } from "./analytics.js";
 import { resolveApiKey } from "./config.js";
 import { PARAGRAPH_SERVER_INSTRUCTIONS } from "./instructions.js";
-import { beforeSendMcpEvent } from "./posthog-before-send.js";
 import { registerTools, ALL_TOOLSETS, type Toolset } from "./tools/index.js";
 import { VERSION } from "./version.js";
 
@@ -87,7 +87,10 @@ Examples:
   return { transport, port, toolsets };
 }
 
-function createMcpServer(toolsets?: Toolset[]) {
+function createMcpServer(
+  toolsets: Toolset[] | undefined,
+  transportKind: "stdio" | "http"
+) {
   const apiKey = resolveApiKey();
 
   const server = new McpServer({
@@ -106,13 +109,24 @@ function createMcpServer(toolsets?: Toolset[]) {
   };
 
   registerTools(server, getApi, toolsets);
-  instrument(server, posthog, { beforeSend: beforeSendMcpEvent });
+  instrument(
+    server,
+    posthog,
+    buildAnalyticsOptions({
+      getApi,
+      apiKey,
+      transport: transportKind,
+      // Populated on long-lived stdio servers after initialize; undefined on
+      // stateless per-request http servers, which is expected.
+      getClientInfo: () => server.server.getClientVersion(),
+    })
+  );
 
   return server;
 }
 
 async function startStdio(toolsets?: Toolset[]) {
-  const server = createMcpServer(toolsets);
+  const server = createMcpServer(toolsets, "stdio");
   const transport = new StdioServerTransport();
   await server.connect(transport);
 }
@@ -134,7 +148,7 @@ async function startHttp(port: number, toolsets?: Toolset[]) {
     }
 
     try {
-      const mcpServer = createMcpServer(toolsets);
+      const mcpServer = createMcpServer(toolsets, "http");
 
       const transport = new StreamableHTTPServerTransport({
         sessionIdGenerator: undefined, // stateless
