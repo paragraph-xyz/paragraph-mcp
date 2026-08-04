@@ -196,12 +196,46 @@ describe("buildAnalyticsOptions eventProperties", () => {
 });
 
 describe("buildAnalyticsOptions beforeSend", () => {
-  it("reuses the existing synthetic-exception filter", () => {
-    const options = buildAnalyticsOptions({
-      getApi: () => ({}) as ParagraphAPI,
-      apiKey: "para_key",
-      transport: "worker",
+  const options = buildAnalyticsOptions({
+    getApi: () => ({}) as ParagraphAPI,
+    apiKey: "para_key",
+    transport: "worker",
+  });
+
+  const send = (event: string, properties: Record<string, unknown>) =>
+    (options.beforeSend as Function)({
+      event,
+      distinct_id: "owner-1",
+      timestamp: new Date().toISOString(),
+      type: "capture",
+      properties,
     });
-    expect(options.beforeSend).toBe(beforeSendMcpEvent);
+
+  it("drops $identify events (raw request/extra would leak the Authorization header)", async () => {
+    expect(
+      await send("$identify", {
+        $mcp_parameters: {
+          extra: {
+            requestInfo: { headers: { authorization: "Bearer para_secret" } },
+          },
+        },
+      })
+    ).toBeNull();
+  });
+
+  it("still delegates to the synthetic-exception filter for other events", async () => {
+    const synthetic = {
+      $exception_list: [
+        {
+          type: "Error",
+          value: "boom",
+          mechanism: { handled: true, synthetic: true },
+        },
+      ],
+    };
+    expect(await send("$exception", synthetic)).toBeNull();
+
+    const toolCall = await send("$mcp_tool_call", { $mcp_tool_name: "get-post" });
+    expect(toolCall?.event).toBe("$mcp_tool_call");
   });
 });
