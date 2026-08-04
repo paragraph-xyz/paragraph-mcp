@@ -3,8 +3,8 @@ import { WebStandardStreamableHTTPServerTransport } from "@modelcontextprotocol/
 import { ParagraphAPI } from "@paragraph-com/sdk";
 import { instrument } from "@posthog/mcp";
 import type { PostHog, EventMessage } from "posthog-node";
+import { buildAnalyticsOptions } from "./analytics.js";
 import { PARAGRAPH_SERVER_INSTRUCTIONS } from "./instructions.js";
-import { beforeSendMcpEvent } from "./posthog-before-send.js";
 import { registerTools } from "./tools/index.js";
 import { VERSION } from "./version.js";
 
@@ -90,7 +90,19 @@ export function createParagraphMcpServer(apiKey: string) {
   };
 
   registerTools(server, getApi);
-  instrument(server, posthogCaptureSink, { beforeSend: beforeSendMcpEvent });
+  instrument(
+    server,
+    posthogCaptureSink,
+    buildAnalyticsOptions({
+      getApi,
+      apiKey,
+      transport: "worker",
+      // The worker builds a fresh server per POST, so clientInfo is only
+      // present on the initialize request itself; tool calls report without
+      // it (attribution rides identity + the first-party header instead).
+      getClientInfo: () => server.server.getClientVersion(),
+    })
+  );
   return server;
 }
 
