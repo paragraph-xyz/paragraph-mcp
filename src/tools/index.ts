@@ -10,9 +10,11 @@ import { registerFeedTools } from "./feed.js";
 import { registerMeTools } from "./me.js";
 import { registerAnalyticsTools } from "./analytics.js";
 import { registerEmailTools } from "./emails.js";
+import { registerContentTools } from "./content.js";
 
 export type Toolset =
   | "posts"
+  | "content"
   | "publications"
   | "subscribers"
   | "users"
@@ -25,6 +27,7 @@ export type Toolset =
 
 export const ALL_TOOLSETS: Toolset[] = [
   "posts",
+  "content",
   "publications",
   "subscribers",
   "users",
@@ -42,6 +45,7 @@ const toolsetRegistrars: Record<
 > = {
   publications: registerPublicationTools,
   posts: registerPostTools,
+  content: registerContentTools,
   subscribers: registerSubscriberTools,
   users: registerUserTools,
   coins: registerCoinTools,

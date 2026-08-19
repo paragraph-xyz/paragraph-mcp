@@ -145,6 +145,15 @@ npx @paragraph-com/mcp --http --port 3100
 - **delete-post** — Delete a post
 - **send-test-email** — Send a test newsletter for a draft
 
+### Content
+Drafted short-form content — X posts and threads, LinkedIn posts, one-off emails, and X Articles. These tools draft only; the writer sends the piece from the Paragraph app.
+- **create-content** — Save a piece to your publication's library
+- **list-content** — List your library, filterable by kind and status
+- **get-content** — Get one piece, with its body
+- **update-content** — Rename a piece or replace its body
+- **archive-content** — Put a piece away without deleting it
+- **restore-content** — Bring an archived piece back
+
 ### Publications
 - **get-publication** — Get publication metadata by ID, slug, or domain
 
@@ -183,7 +192,7 @@ Only expose the tools your agent needs:
 npx @paragraph-com/mcp --toolsets posts,search
 ```
 
-Available toolsets: `posts`, `publications`, `subscribers`, `users`, `coins`, `search`, `feed`, `me`, `analytics`
+Available toolsets: `posts`, `content`, `publications`, `subscribers`, `users`, `coins`, `search`, `feed`, `me`, `analytics`, `emails`
 
 ## Examples
 
