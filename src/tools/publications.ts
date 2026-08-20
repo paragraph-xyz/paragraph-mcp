@@ -77,8 +77,6 @@ export function registerPublicationTools(
         featuredPost: updatePublicationBody.shape.featuredPost.describe(
           "Featured post selector. Use 'latest', 'popular', 'disabled', or a post ID belonging to this publication."
         ),
-        disableComments: updatePublicationBody.shape.disableComments,
-        disableHighlights: updatePublicationBody.shape.disableHighlights,
         enableTableOfContents: updatePublicationBody.shape.enableTableOfContents,
         enableSubscribePopup: updatePublicationBody.shape.enableSubscribePopup,
         enableSubscribeScroll: updatePublicationBody.shape.enableSubscribeScroll,
