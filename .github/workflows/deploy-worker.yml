@@ -1,0 +1,52 @@
+name: Deploy Worker
+
+# The hosted server at mcp.paragraph.com. Separate from Release because it
+# ships a different artifact than the npm package: a failed deploy should not
+# mark a successful publish red, and redeploying must not require burning a
+# version number (npm refuses a republished one).
+#
+# workflow_dispatch is the retry path — re-running the Release workflow after a
+# deploy failure would try to publish an already-published version.
+on:
+  push:
+    tags:
+      - "v*.*.*"
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      # Skipped rather than failed when unconfigured, so a fork or a
+      # credential-less repo doesn't show a permanently red workflow.
+      - name: Check for Cloudflare credentials
+        id: creds
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: |
+          if [[ -n "$CLOUDFLARE_API_TOKEN" ]]; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::CLOUDFLARE_API_TOKEN not set - skipping. Run 'yarn deploy' locally to update mcp.paragraph.com."
+          fi
+
+      - name: Enable Corepack
+        if: steps.creds.outputs.ready == 'true'
+        run: corepack enable
+
+      - name: Install dependencies
+        if: steps.creds.outputs.ready == 'true'
+        run: yarn install --immutable
+
+      - name: Deploy to Cloudflare Workers
+        if: steps.creds.outputs.ready == 'true'
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: yarn deploy

@@ -1,5 +1,9 @@
 {
   "name": "paragraph-mcp",
+  // Explicit because the deploy token can see more than one account, and
+  // wrangler cannot choose non-interactively ("More than one account
+  // available"). Same account the monorepo Workers deploy to.
+  "account_id": "d023bb154439e81b80d068cb1f66bd75",
   "main": "src/worker.ts",
   "compatibility_date": "2025-03-10",
   "compatibility_flags": ["nodejs_compat", "nodejs_compat_populate_process_env"],
