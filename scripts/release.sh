@@ -2,49 +2,19 @@
 set -euo pipefail
 
 # Usage: npm run release [patch|minor|major]
-# Builds, tests, publishes to npm, deploys to Cloudflare Workers,
-# and creates a GitHub release.
 #
-# Requires:
-#   NPM_TOKEN  — granular access token from https://www.npmjs.com/settings/tokens
-#                with read/write permissions for @paragraph-com/mcp.
-#                Must NOT require 2FA. You can delete it after the release.
-#   wrangler   — must be authenticated (`wrangler login` or CLOUDFLARE_API_TOKEN).
+# Runs the checks locally, bumps the version, and pushes the tag. The tag is
+# the trigger: .github/workflows/release.yml publishes to npm, creates the
+# GitHub release, and deploys the Worker.
+#
+# Requires no credentials. npm auth is OIDC (trusted publishing) inside the
+# workflow, so there is no NPM_TOKEN to mint, hold, or leak, and nobody needs
+# npm publish rights on this package to cut a release.
 
 BUMP="${1:-patch}"
 
 if [[ "$BUMP" != "patch" && "$BUMP" != "minor" && "$BUMP" != "major" ]]; then
   echo "Usage: npm run release [patch|minor|major]"
-  exit 1
-fi
-
-if [[ -z "${NPM_TOKEN:-}" ]]; then
-  echo "Error: NPM_TOKEN is not set."
-  echo ""
-  echo "Create a granular access token at https://www.npmjs.com/settings/tokens"
-  echo "  - Type: Granular Access Token"
-  echo "  - Packages: Read and write, scoped to @paragraph-com/mcp"
-  echo "  - Do NOT require 2FA on the token"
-  echo "  - You can delete the token after the release"
-  echo ""
-  echo "Then run: NPM_TOKEN=<token> npm run release $BUMP"
-  exit 1
-fi
-
-# Verify wrangler can actually access this Worker.
-# `deployments list` hits the Cloudflare API scoped to the Worker in
-# wrangler.jsonc, so it fails both when wrangler isn't logged in AND when the
-# token is missing the account/workers scopes needed to deploy. This is
-# stronger than `wrangler whoami`, which only proves *some* account is logged
-# in — not that it can touch this Worker.
-if ! npx wrangler deployments list &>/dev/null; then
-  echo "Error: wrangler cannot access this Worker."
-  echo ""
-  echo "Either wrangler is not logged in, or the active credentials don't have"
-  echo "access to the 'paragraph-mcp' Worker account."
-  echo ""
-  echo "Run 'wrangler login' or set CLOUDFLARE_API_TOKEN with a token that has"
-  echo "Workers Scripts:Edit on the correct account."
   exit 1
 fi
 
@@ -70,7 +40,8 @@ git pull --rebase
 echo "=> Installing dependencies..."
 yarn install --immutable
 
-# Build and test
+# Build and test locally before tagging. CI runs these again, but failing here
+# costs a rerun instead of a published-then-yanked version.
 echo "=> Building..."
 yarn build
 
@@ -82,41 +53,16 @@ echo "=> Bumping $BUMP version..."
 NEW_VERSION="$(npm version "$BUMP" --message "release: v%s")"
 echo "   New version: $NEW_VERSION"
 
-# Push commit + tag
+# Push commit + tag. Pushing the tag is what starts the release workflow, so it
+# goes last: a failure above leaves nothing half-released.
 echo "=> Pushing to origin..."
 git push && git push --tags
 
-# Publish to npm
-echo "=> Publishing to npm..."
-echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > .npmrc
-trap 'rm -f .npmrc' EXIT
-if ! npm publish; then
-  echo ""
-  echo "ERROR: npm publish failed. The git tag $NEW_VERSION has been pushed."
-  echo "To retry: npm publish"
-  echo "To rollback: git tag -d $NEW_VERSION && git push origin :refs/tags/$NEW_VERSION && git reset --hard HEAD~1 && git push --force"
-  exit 1
-fi
-
-# Deploy to Cloudflare Workers
-echo "=> Deploying to Cloudflare Workers..."
-if ! yarn deploy; then
-  echo ""
-  echo "ERROR: wrangler deploy failed. npm package was published successfully."
-  echo "To retry: yarn deploy"
-  exit 1
-fi
-
-# Create GitHub release
-echo "=> Creating GitHub release..."
-if ! gh release create "$NEW_VERSION" \
-  --title "$NEW_VERSION" \
-  --generate-notes; then
-  echo "WARNING: GitHub release creation failed. npm + worker deploy succeeded."
-fi
-
 echo ""
-echo "=> Released $NEW_VERSION"
-echo "   npm:    https://www.npmjs.com/package/@paragraph-com/mcp"
-echo "   worker: https://mcp.paragraph.com"
-echo "   gh:     https://github.com/paragraph-xyz/paragraph-mcp/releases/tag/${NEW_VERSION}"
+echo "=> Tagged $NEW_VERSION - CI is publishing it now."
+echo "   actions: https://github.com/paragraph-xyz/paragraph-mcp/actions"
+echo "   npm:     https://www.npmjs.com/package/@paragraph-com/mcp"
+echo "   worker:  https://mcp.paragraph.com"
+echo ""
+echo "   If the run fails, fix forward and release again rather than reusing"
+echo "   $NEW_VERSION - npm will not accept a republished version."

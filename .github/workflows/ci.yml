@@ -1,0 +1,44 @@
+name: CI
+
+# This repo had no CI at all (PAR-10415). The gap that matters: the tool
+# registration path is what breaks when the SDK drops a contract field, and the
+# existing suite already catches it — nothing was running it. A removed field
+# now fails here instead of at release time, or in the hosted Worker.
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [20, 22]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      # --immutable so CI resolves the SDK version the lockfile pins. Installing
+      # loosely would let a semver-compatible SDK release drift in unnoticed,
+      # which is the exact failure this workflow exists to catch.
+      - name: Install dependencies
+        run: yarn install --immutable
+
+      - name: Test
+        run: yarn test
+
+      - name: Build
+        run: yarn build
+
+      # The Worker entrypoint is bundled separately from the npm build, so a
+      # dry-run deploy is the only thing that proves it still compiles.
+      - name: Build Worker
+        run: yarn build:worker
