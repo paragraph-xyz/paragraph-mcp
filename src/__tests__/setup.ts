@@ -17,6 +17,7 @@ function noopApi() {
   return {
     posts: { get: vi.fn(chainable), list: vi.fn(list), create: vi.fn(list), update: vi.fn(list), delete: vi.fn(list), sendTestEmail: vi.fn(list) },
     content: { create: vi.fn(list), list: vi.fn(list), get: vi.fn(list), update: vi.fn(list), archive: vi.fn(list), restore: vi.fn(list) },
+    buckets: { list: vi.fn(list), get: vi.fn(list), forPost: vi.fn(list), createForPost: vi.fn(list) },
     publications: { get: vi.fn(chainable) },
     subscribers: { get: vi.fn(list), getCount: vi.fn(list), create: vi.fn(list) },
     users: { get: vi.fn(chainable) },
