@@ -154,13 +154,22 @@ Drafted short-form content — X posts and threads, LinkedIn posts, one-off emai
 - **archive-content** — Put a piece away without deleting it
 - **restore-content** — Bring an archived piece back
 
+### Content groups
+One identity for a post and everything made out of it — the post, the thread drawn from it, the LinkedIn version, the newsletter. The writer sees it as a single stacked row under Content. Seed a group from the post, then pass its `bucketId` on every `create-content` derived from it.
+- **create-post-content-bucket** — Get or create a post's group (idempotent)
+- **get-post-content-bucket** — Find a post's group, or null, without creating one
+- **get-content-bucket** — Get one group and everything already made from its post
+- **list-content-buckets** — List the publication's groups, most recently active first
+
 ### Publications
 - **get-publication** — Get publication metadata by ID, slug, or domain
+- **update-publication** — Update publication settings
 
 ### Subscribers
 - **list-subscribers** — List your subscribers
 - **get-subscriber-count** — Get subscriber count
 - **add-subscriber** — Add a subscriber by email or wallet
+- **remove-subscriber** — Remove a subscriber by email or wallet
 
 ### Users
 - **get-user** — Get user profile by ID or wallet
@@ -184,6 +193,9 @@ Drafted short-form content — X posts and threads, LinkedIn posts, one-off emai
 - **analytics-query** — Run a read-only SQL query against your publication's analytics (open rates, CTR, subscriber counts, top posts, etc.)
 - **analytics-schema** — List available tables and columns in the analytics schema
 
+### Emails
+- **send-custom-email** — Send a markdown email from your publication to a list of recipients
+
 ## Toolset Filtering
 
 Only expose the tools your agent needs:
@@ -192,7 +204,7 @@ Only expose the tools your agent needs:
 npx @paragraph-com/mcp --toolsets posts,search
 ```
 
-Available toolsets: `posts`, `content`, `publications`, `subscribers`, `users`, `coins`, `search`, `feed`, `me`, `analytics`, `emails`
+Available toolsets: `posts`, `content`, `buckets`, `publications`, `subscribers`, `users`, `coins`, `search`, `feed`, `me`, `analytics`, `emails`
 
 ## Examples
 
@@ -207,6 +219,12 @@ The MCP server calls `search-posts` with the query. Claude receives the matching
 **Prompt:** "Write a post titled 'Weekly Update #12' about our new token-gating feature, then publish it"
 
 The server calls `create-post` with the title and generated markdown content, creating it as a draft. After you confirm, it calls `update-post` to set the status to `published`, making it live on your publication.
+
+### Repurpose a post across channels
+
+**Prompt:** "Turn my latest post into an X thread and a LinkedIn post"
+
+The server calls `create-post-content-bucket` with the post's id to get the group, then `create-content` twice with that `bucketId`. The writer opens Content and sees the post with the thread and the LinkedIn version stacked under it, ready to review and send.
 
 ### Get subscriber analytics
 

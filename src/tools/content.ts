@@ -28,6 +28,8 @@ It's validated the same way the Paragraph app validates it, so a thread over 280
 
 **Text only.** Media has to be uploaded to X or LinkedIn first, which the API can't do yet — sending \`media\` is rejected. If the user wants an image, tell them to add it to the draft in the app.
 
+**Group it with the post it came from.** When this piece is a version of a Paragraph post — a thread drawn from it, a LinkedIn version, the newsletter — call \`create-post-content-bucket\` with that post's id and pass the \`bucketId\` it returns. The writer then sees the post and everything made from it as one row under Content instead of unrelated drafts. Omit it for standalone work.
+
 Requires API key.
 `.trim();
 
@@ -38,7 +40,9 @@ Rename a piece of content, replace its body, or both. Requires API key.
 
 **Scheduled pieces are locked.** If a send is queued or already running, its words go out exactly as written, so an edit to \`body\` is refused with an explanation. Tell the user to cancel the schedule in the app first. Renaming is always allowed — a title isn't published anywhere.
 
-Provide at least one of \`title\` or \`body\`.
+\`bucketId\` groups this piece with the post it was made from, for a draft created before the group existed. A piece already grouped with a different post is refused rather than moved; tell the user to ungroup it in the app.
+
+Provide at least one of \`title\`, \`body\`, or \`bucketId\`.
 `.trim();
 
 export function registerContentTools(
@@ -54,6 +58,7 @@ export function registerContentTools(
         kind: createContentBody.shape.kind,
         title: createContentBody.shape.title,
         body: createContentBody.shape.body,
+        bucketId: createContentBody.shape.bucketId,
       },
       annotations: {
         readOnlyHint: false,
@@ -146,6 +151,7 @@ export function registerContentTools(
         contentId: updateContentParams.shape.contentId,
         title: updateContentBody.shape.title,
         body: updateContentBody.shape.body,
+        bucketId: updateContentBody.shape.bucketId,
       },
       annotations: {
         readOnlyHint: false,
@@ -161,6 +167,9 @@ export function registerContentTools(
           id: params.contentId,
           ...(params.title !== undefined ? { title: params.title } : {}),
           ...(params.body !== undefined ? { body: params.body } : {}),
+          ...(params.bucketId !== undefined
+            ? { bucketId: params.bucketId }
+            : {}),
         });
         return json(result);
       } catch (err) {
