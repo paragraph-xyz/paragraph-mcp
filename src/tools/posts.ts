@@ -26,13 +26,21 @@ import {
   toError,
 } from "./helpers.js";
 
-export type PostUrls = Partial<Pick<GetPostById200, "id" | "slug" | "status">> & {
+export type PostUrls = Partial<
+  Pick<GetPostById200, "id" | "slug" | "status" | "publishOnline">
+> & {
   editorUrl?: string;
   publicUrl?: string;
 };
 
 const POST_PREVIEW_DESCRIPTION =
   "Preview text used as the meta description in social cards, search results, and archive listings. Keep under 145 characters so it renders without truncation in Google, X, and Farcaster link previews.";
+
+const PUBLISH_ONLINE_DESCRIPTION =
+  "Whether the post gets a public page on the writer's website. Defaults to true. Set false for a newsletter-only post: combined with `status: 'published'` and `sendNewsletter: true`, the post is emailed to subscribers but never appears on the website, in the feed, in RSS, or in search — its URL returns 404, so the result carries no publicUrl. Use this when the writer asks to email subscribers without publishing, or to keep a post off the site. After delivery the post reads back with `publishOnline: false` and a `publishedAt` timestamp but `status: 'draft'` (it has no live page); that is the delivered state — do not publish or send it again. To put a newsletter-only post on the website later, pass `publishOnline: true` with `status: 'published'` and OMIT sendNewsletter so subscribers are not emailed a second time.";
+
+const CANONICAL_URL_DESCRIPTION =
+  "Original URL of a post that first appeared somewhere else — the writer's other site, Substack, Medium, a company blog. Set it when the writer says a post is a cross-post, syndicated, republished, or imported from elsewhere, so search engines credit the original instead of treating the Paragraph copy as duplicate content. It only changes the page's canonical metadata (<link rel=\"canonical\">): the post keeps its Paragraph URL, still renders there, and is still delivered by newsletter. Use the exact URL the writer gave you — never guess one, and never point it at the post's own Paragraph URL. Not for posts written on Paragraph first and syndicated elsewhere afterwards; there the Paragraph URL is the canonical. Pass null to clear it.";
 
 /** What a Tiptap document is, shared by create-post and update-post. */
 const BODY_JSON_SHAPE =
@@ -115,7 +123,14 @@ export async function buildPostUrls(
       editorUrl: `${PARAGRAPH_FRONTEND}/editor/${post.id}`,
     };
     if (post.status) result.status = post.status;
-    if (publication && post.status === "published") {
+    // A newsletter-only post has no public page: its URL 404s, so surface the
+    // flag instead of a link the agent would hand the writer.
+    if (post.publishOnline === false) result.publishOnline = false;
+    if (
+      publication &&
+      post.status === "published" &&
+      post.publishOnline !== false
+    ) {
       result.publicUrl = buildPublicUrl(publication, post.slug);
     }
     return result;
@@ -286,7 +301,7 @@ export function registerPostTools(
     {
       title: "Create post",
       description:
-        "Create a post in your publication. Defaults to a draft — set status to 'published' only with explicit user approval, as this makes the post publicly visible. Set scheduledAt to a future Unix ms timestamp to schedule first-publish — confirm with the user before scheduling, as the post will be published automatically at the scheduled time. Requires API key. Provide the body as either markdown (plain prose the server converts to rich content) or bodyJson (a Tiptap document — use it when the post needs links, embedded videos, tweets, cards, or buttons), but not both. Note that editing a post later is bodyJson-only, via update-post. Do not set sendNewsletter to true without explicit user approval — it emails all subscribers and cannot be undone.",
+        "Create a post in your publication. Defaults to a draft — set status to 'published' only with explicit user approval, as this makes the post publicly visible. Set scheduledAt to a future Unix ms timestamp to schedule first-publish — confirm with the user before scheduling, as the post will be published automatically at the scheduled time. Requires API key. Provide the body as either markdown (plain prose the server converts to rich content) or bodyJson (a Tiptap document — use it when the post needs links, embedded videos, tweets, cards, or buttons), but not both. Note that editing a post later is bodyJson-only, via update-post. Do not set sendNewsletter to true without explicit user approval — it emails all subscribers and cannot be undone. This tool cannot set a canonical URL or make a post newsletter-only: create the draft, then call update-post with `canonicalUrl` (for a post that first appeared elsewhere) or `publishOnline: false` (to email subscribers without putting the post on the website).",
       inputSchema: {
         title: createPostBody.shape.title.describe("Post title"),
         markdown: createPostBody.shape.markdown
@@ -351,7 +366,7 @@ export function registerPostTools(
     {
       title: "Update post",
       description:
-        "Update an existing post by ID or slug. Only provided fields are updated — omit any field you don't want to change. Requires API key. To change the body, call get-post first and send the edited Tiptap document back as `bodyJson` — that is the only body channel, so a post's text, links, and embeds are always edited from the real document rather than a lossy copy. Do NOT pass `status` unless you explicitly intend to change the publish state — and always confirm with the user before any status change: `status: 'published'` publishes the post, `status: 'draft'` unpublishes a live post, `status: 'archived'` archives. When updating other fields (title, bodyJson, categories, etc.) on a post, omit `status` entirely — do not echo back a value read from get-post/list-posts. Set scheduledAt to a future Unix ms timestamp to schedule first-publish (confirm with the user first — the post will publish automatically at the scheduled time); pass scheduledAt: null to cancel. Set publishedAt to a Unix ms timestamp to backdate (or post-date) the post's display date — once set, the value sticks across re-publishes.",
+        "Update an existing post by ID or slug. Only provided fields are updated — omit any field you don't want to change. Requires API key. To change the body, call get-post first and send the edited Tiptap document back as `bodyJson` — that is the only body channel, so a post's text, links, and embeds are always edited from the real document rather than a lossy copy. Do NOT pass `status` unless you explicitly intend to change the publish state — and always confirm with the user before any status change: `status: 'published'` publishes the post, `status: 'draft'` unpublishes a live post, `status: 'archived'` archives. When updating other fields (title, bodyJson, categories, etc.) on a post, omit `status` entirely — do not echo back a value read from get-post/list-posts. Set scheduledAt to a future Unix ms timestamp to schedule first-publish (confirm with the user first — the post will publish automatically at the scheduled time); pass scheduledAt: null to cancel. Set publishedAt to a Unix ms timestamp to backdate (or post-date) the post's display date — once set, the value sticks across re-publishes. Newsletter-only delivery: to email subscribers WITHOUT putting the post on the website, pass `publishOnline: false` together with `status: 'published'` and `sendNewsletter: true` (confirm with the user first — the email cannot be recalled). Cross-posts: when the post first appeared somewhere else, set `canonicalUrl` to that original URL so search engines credit the original; this only changes the page's canonical metadata, never the Paragraph link.",
       inputSchema: {
         id: updatePostParams.shape.postId
           .optional()
@@ -375,6 +390,12 @@ export function registerPostTools(
           "Unix ms timestamp to set as the post's display publish date. Once set, the value is preserved across re-publishes. Useful for backdating imported content or correcting a publish date."
         ),
         sendNewsletter: updatePostBody.shape.sendNewsletter,
+        publishOnline: updatePostBody.shape.publishOnline.describe(
+          PUBLISH_ONLINE_DESCRIPTION
+        ),
+        canonicalUrl: updatePostBody.shape.canonicalUrl.describe(
+          CANONICAL_URL_DESCRIPTION
+        ),
         postPreview: updatePostBody.shape.postPreview.describe(
           POST_PREVIEW_DESCRIPTION
         ),
@@ -390,7 +411,12 @@ export function registerPostTools(
       annotations: {
         readOnlyHint: false,
         destructiveHint: true,
-        idempotentHint: true,
+        // Not idempotent: a newsletter-only publish (`publishOnline: false`)
+        // leaves the post unpublished, so replaying the same
+        // `status: 'published'` + `sendNewsletter: true` call starts a second
+        // newsletter fan-out. A client that retried on the strength of an
+        // idempotent hint would email every subscriber twice.
+        idempotentHint: false,
         openWorldHint: false,
       },
     },

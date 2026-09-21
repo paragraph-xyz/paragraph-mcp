@@ -139,3 +139,113 @@ describe("update-post identifier handling", () => {
     expect(ctx.updateCalls).toHaveLength(0);
   });
 });
+
+describe("update-post newsletter-only delivery and canonical URL", () => {
+  let client: Client | undefined;
+  beforeEach(() => {
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+  });
+  afterEach(async () => {
+    await client?.close();
+    client = undefined;
+  });
+
+  it("advertises publishOnline and canonicalUrl on update-post only", async () => {
+    const ctx = await setup();
+    client = ctx.client;
+
+    const { tools } = await client.listTools();
+    const update = tools.find((t) => t.name === "update-post");
+    const create = tools.find((t) => t.name === "create-post");
+
+    expect(update?.inputSchema.properties).toHaveProperty("publishOnline");
+    expect(update?.inputSchema.properties).toHaveProperty("canonicalUrl");
+    // The API only accepts these on update; create-post's description points
+    // the agent at update-post instead.
+    expect(create?.inputSchema.properties).not.toHaveProperty("publishOnline");
+    expect(create?.inputSchema.properties).not.toHaveProperty("canonicalUrl");
+    expect(create?.description).toContain("publishOnline: false");
+    expect(create?.description).toContain("canonicalUrl");
+  });
+
+  it("does not advertise update-post as idempotent (a replayed newsletter-only publish re-sends)", async () => {
+    const ctx = await setup();
+    client = ctx.client;
+
+    const { tools } = await client.listTools();
+    const update = tools.find((t) => t.name === "update-post");
+
+    expect(update?.annotations?.idempotentHint).toBe(false);
+    expect(update?.annotations?.destructiveHint).toBe(true);
+  });
+
+  it("forwards a newsletter-only publish (publishOnline: false) to the API", async () => {
+    const ctx = await setup();
+    client = ctx.client;
+
+    const res = await client.callTool({
+      name: "update-post",
+      arguments: {
+        id: "p_1",
+        publishOnline: false,
+        status: "published",
+        sendNewsletter: true,
+      },
+    });
+
+    expect(res.isError).toBeFalsy();
+    expect(ctx.updateCalls).toHaveLength(1);
+    expect(ctx.updateCalls[0]).toEqual({
+      id: "p_1",
+      publishOnline: false,
+      status: "published",
+      sendNewsletter: true,
+    });
+  });
+
+  it("forwards canonicalUrl to the API", async () => {
+    const ctx = await setup();
+    client = ctx.client;
+
+    const res = await client.callTool({
+      name: "update-post",
+      arguments: {
+        id: "p_1",
+        canonicalUrl: "https://example.com/original-post",
+      },
+    });
+
+    expect(res.isError).toBeFalsy();
+    expect(ctx.updateCalls[0]).toEqual({
+      id: "p_1",
+      canonicalUrl: "https://example.com/original-post",
+    });
+  });
+
+  it("forwards canonicalUrl: null so a canonical can be cleared", async () => {
+    const ctx = await setup();
+    client = ctx.client;
+
+    const res = await client.callTool({
+      name: "update-post",
+      arguments: { id: "p_1", canonicalUrl: null },
+    });
+
+    expect(res.isError).toBeFalsy();
+    expect(ctx.updateCalls[0]).toEqual({ id: "p_1", canonicalUrl: null });
+  });
+
+  it("rejects a canonicalUrl that is not an http(s) URL before calling the API", async () => {
+    const ctx = await setup();
+    client = ctx.client;
+
+    const res = await client.callTool({
+      name: "update-post",
+      arguments: { id: "p_1", canonicalUrl: "not a url" },
+    });
+
+    expect(res.isError).toBe(true);
+    expect(ctx.updateCalls).toHaveLength(0);
+  });
+});
+

@@ -6,6 +6,7 @@ type PostStub = {
   id: string;
   slug: string;
   status?: "draft" | "published" | "scheduled" | "archived";
+  publishOnline?: boolean;
 };
 
 type ApiPostsStub = {
@@ -77,6 +78,38 @@ describe("buildPostUrls", () => {
       const out = await buildPostUrls(api, getPub, { id: "p_2" });
 
       expect(out.publicUrl).toBe("https://paragraph.com/@my-blog/launch-day");
+    });
+
+    it("omits publicUrl and reports publishOnline: false for a newsletter-only post", async () => {
+      const { api } = apiWithPosts({
+        id: "p_nl",
+        slug: "members-only-update",
+        status: "published",
+        publishOnline: false,
+      });
+      const getPub = vi.fn().mockResolvedValue(publication());
+
+      const out = await buildPostUrls(api, getPub, { id: "p_nl" });
+
+      // The post's URL would 404, so the agent must not hand it to the writer.
+      expect(out.publicUrl).toBeUndefined();
+      expect(out.publishOnline).toBe(false);
+      expect(out.editorUrl).toBe("https://paragraph.com/editor/p_nl");
+    });
+
+    it("does not report publishOnline when the post is public", async () => {
+      const { api } = apiWithPosts({
+        id: "p_pub",
+        slug: "hello",
+        status: "published",
+        publishOnline: true,
+      });
+      const getPub = vi.fn().mockResolvedValue(publication());
+
+      const out = await buildPostUrls(api, getPub, { id: "p_pub" });
+
+      expect(out.publicUrl).toBe("https://paragraph.com/@my-blog/hello");
+      expect(out).not.toHaveProperty("publishOnline");
     });
 
     it("uses custom domain when the publication has one", async () => {
