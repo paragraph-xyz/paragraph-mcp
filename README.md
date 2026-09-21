@@ -141,7 +141,7 @@ npx @paragraph-com/mcp --http --port 3100
 - **get-post** — Get a post by ID or slugs
 - **list-posts** — List posts from a publication or your own posts
 - **create-post** — Create a new post (markdown)
-- **update-post** — Update an existing post
+- **update-post** — Update an existing post: body, status, schedule, cover, canonical URL, or newsletter-only delivery
 - **delete-post** — Delete a post
 - **send-test-email** — Send a test newsletter for a draft
 
@@ -219,6 +219,18 @@ The MCP server calls `search-posts` with the query. Claude receives the matching
 **Prompt:** "Write a post titled 'Weekly Update #12' about our new token-gating feature, then publish it"
 
 The server calls `create-post` with the title and generated markdown content, creating it as a draft. After you confirm, it calls `update-post` to set the status to `published`, making it live on your publication.
+
+### Send a newsletter without publishing it online
+
+**Prompt:** "Email this update to my subscribers, but don't put it on the site"
+
+The server calls `create-post` to save the draft, then, after you confirm, `update-post` with `publishOnline: false`, `status: "published"`, and `sendNewsletter: true`. Subscribers get the email; the post never appears on your website, feed, or RSS, and its URL returns 404. The tool result has no `publicUrl` for that reason.
+
+### Cross-post something that first appeared elsewhere
+
+**Prompt:** "Republish my Substack post here and point the canonical at the original"
+
+The server calls `create-post` with the content, then `update-post` with `canonicalUrl` set to the Substack URL. Search engines credit the original instead of treating the Paragraph copy as duplicate content, while the Paragraph link keeps working and the newsletter still sends.
 
 ### Repurpose a post across channels
 
