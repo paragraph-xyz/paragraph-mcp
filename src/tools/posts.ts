@@ -411,7 +411,12 @@ export function registerPostTools(
       annotations: {
         readOnlyHint: false,
         destructiveHint: true,
-        idempotentHint: true,
+        // Not idempotent: a newsletter-only publish (`publishOnline: false`)
+        // leaves the post unpublished, so replaying the same
+        // `status: 'published'` + `sendNewsletter: true` call starts a second
+        // newsletter fan-out. A client that retried on the strength of an
+        // idempotent hint would email every subscriber twice.
+        idempotentHint: false,
         openWorldHint: false,
       },
     },

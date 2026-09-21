@@ -168,6 +168,17 @@ describe("update-post newsletter-only delivery and canonical URL", () => {
     expect(create?.description).toContain("canonicalUrl");
   });
 
+  it("does not advertise update-post as idempotent (a replayed newsletter-only publish re-sends)", async () => {
+    const ctx = await setup();
+    client = ctx.client;
+
+    const { tools } = await client.listTools();
+    const update = tools.find((t) => t.name === "update-post");
+
+    expect(update?.annotations?.idempotentHint).toBe(false);
+    expect(update?.annotations?.destructiveHint).toBe(true);
+  });
+
   it("forwards a newsletter-only publish (publishOnline: false) to the API", async () => {
     const ctx = await setup();
     client = ctx.client;
