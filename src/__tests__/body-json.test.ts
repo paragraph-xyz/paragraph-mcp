@@ -188,6 +188,23 @@ describe("bodyJson on update-post / create-post (PAR-9429)", () => {
     expect(ctx.createCalls).toHaveLength(0);
   });
 
+  it("create-post ignores a blank markdown sent alongside bodyJson", async () => {
+    const ctx = await setup();
+    client = ctx.client;
+
+    const res = await client.callTool({
+      name: "create-post",
+      arguments: { title: "T", markdown: "", bodyJson: DOC_PLAIN, subtitle: "" },
+    });
+
+    expect(res.isError).toBeFalsy();
+    expect(ctx.createCalls[0]).toEqual({
+      title: "T",
+      bodyJson: DOC_PLAIN,
+      status: "draft",
+    });
+  });
+
   it("create-post requires markdown or bodyJson", async () => {
     const ctx = await setup();
     client = ctx.client;

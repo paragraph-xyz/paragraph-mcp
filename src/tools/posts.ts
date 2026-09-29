@@ -65,6 +65,21 @@ const authorIdsSchema = z
     "User ids to credit as the post's authors, in byline order. Replaces the whole byline, so include every author you want kept — call get-post first and start from its `authorIds`. Each id must be the publication's owner or an active team member; ids from outside the publication are rejected. No tool enumerates members, so an id has to come from a post you have read (`authorIds` on get-post, `authors[].id` on list-posts) or from the writer — ask rather than guessing. Confirm with the writer before re-attributing a post to someone else."
   );
 
+/**
+ * Some models fill every optional field with "", 0 or [] instead of omitting
+ * it; forwarding those would blank a post's title, body, tags, or date.
+ */
+function dropBlankArgs<T extends Record<string, unknown>>(params: T): T {
+  return Object.fromEntries(
+    Object.entries(params).filter(
+      ([, value]) =>
+        value !== "" &&
+        value !== 0 &&
+        !(Array.isArray(value) && value.length === 0)
+    )
+  ) as T;
+}
+
 function buildPublicUrl(
   publication: Pick<GetMe200, "slug" | "customDomain">,
   postSlug: string
@@ -336,7 +351,8 @@ export function registerPostTools(
         openWorldHint: false,
       },
     },
-    async (params) => {
+    async (rawParams) => {
+      const params = dropBlankArgs(rawParams);
       if (params.markdown !== undefined && params.bodyJson !== undefined) {
         return error("Provide either markdown or bodyJson, not both");
       }
@@ -426,7 +442,7 @@ export function registerPostTools(
       },
     },
     async (params) => {
-      const { id, slug, newSlug, ...rest } = params;
+      const { id, slug, newSlug, ...rest } = dropBlankArgs(params);
 
       if (!id && !slug) {
         return error("Provide id or slug");
