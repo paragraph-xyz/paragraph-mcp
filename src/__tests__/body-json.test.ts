@@ -198,7 +198,11 @@ describe("bodyJson on update-post / create-post (PAR-9429)", () => {
     });
 
     expect(res.isError).toBeFalsy();
-    expect(ctx.createCalls[0]).toEqual({ title: "T", bodyJson: DOC_PLAIN });
+    expect(ctx.createCalls[0]).toEqual({
+      title: "T",
+      bodyJson: DOC_PLAIN,
+      status: "draft",
+    });
   });
 
   it("create-post requires markdown or bodyJson", async () => {
