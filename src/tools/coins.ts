@@ -3,7 +3,7 @@ import { z } from "zod";
 import { ParagraphAPI } from "@paragraph-com/sdk";
 import {
   getCoinParams,
-  getCoinByContractParams,
+  getCoinByContractPathContractAddressRegExp,
   getCoinHoldersByIdParams,
   getCoinHoldersByIdQueryParams,
   getCoinHoldersByContractParams,
@@ -22,10 +22,13 @@ export function registerCoinTools(
         "Get coin/token metadata by ID or contract address, or list popular coins. Provide exactly one of id, contractAddress, or popular=true, and omit the other fields. Empty strings are treated as omitted.",
       inputSchema: {
         id: getCoinParams.shape.id.optional().describe("Coin ID"),
-        contractAddress: getCoinByContractParams.shape.contractAddress
-          .or(z.literal(""))
+        // Accepts "" (treated as omitted) and validates the address in the
+        // handler. See get-publication's slug for why this isn't
+        // `.or(z.literal(""))`.
+        contractAddress: z
+          .string()
           .optional()
-          .describe("On-chain contract address"),
+          .describe("On-chain contract address (0x followed by 40 hex characters)"),
         popular: z
           .boolean()
           .optional()
@@ -51,6 +54,12 @@ export function registerCoinTools(
       }
       if (count > 1) {
         return error("Provide only one of id, contractAddress, or popular");
+      }
+      if (
+        hasContract &&
+        !getCoinByContractPathContractAddressRegExp.test(params.contractAddress!)
+      ) {
+        return error("contractAddress must be 0x followed by 40 hex characters");
       }
 
       try {
