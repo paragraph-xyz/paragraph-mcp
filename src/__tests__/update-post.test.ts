@@ -235,6 +235,32 @@ describe("update-post newsletter-only delivery and canonical URL", () => {
     expect(ctx.updateCalls[0]).toEqual({ id: "p_1", canonicalUrl: null });
   });
 
+  it("treats canonicalUrl: \"\" as omitted", async () => {
+    const ctx = await setup();
+    client = ctx.client;
+
+    const res = await client.callTool({
+      name: "update-post",
+      arguments: { id: "p_1", categories: ["Featured"], canonicalUrl: "" },
+    });
+
+    expect(res.isError).toBeFalsy();
+    expect(ctx.updateCalls[0]).toEqual({ id: "p_1", categories: ["Featured"] });
+  });
+
+  it("rejects an update whose only field is canonicalUrl: \"\"", async () => {
+    const ctx = await setup();
+    client = ctx.client;
+
+    const res = await client.callTool({
+      name: "update-post",
+      arguments: { id: "p_1", canonicalUrl: "" },
+    });
+
+    expect(res.isError).toBe(true);
+    expect(ctx.updateCalls).toHaveLength(0);
+  });
+
   it("rejects a canonicalUrl that is not an http(s) URL before calling the API", async () => {
     const ctx = await setup();
     client = ctx.client;

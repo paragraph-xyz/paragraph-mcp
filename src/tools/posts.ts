@@ -393,9 +393,14 @@ export function registerPostTools(
         publishOnline: updatePostBody.shape.publishOnline.describe(
           PUBLISH_ONLINE_DESCRIPTION
         ),
-        canonicalUrl: updatePostBody.shape.canonicalUrl.describe(
-          CANONICAL_URL_DESCRIPTION
-        ),
+        // Some models send "" for every optional field; a post with no
+        // canonical has nothing else to send, so "" must mean "leave it".
+        canonicalUrl: z
+          .preprocess(
+            (value) => (value === "" ? undefined : value),
+            updatePostBody.shape.canonicalUrl
+          )
+          .describe(CANONICAL_URL_DESCRIPTION),
         postPreview: updatePostBody.shape.postPreview.describe(
           POST_PREVIEW_DESCRIPTION
         ),
@@ -437,7 +442,7 @@ export function registerPostTools(
       // (this tool has none — bodyJson is the only body channel, PAR-9923) would
       // otherwise reach the API as an empty update: a silent no-op the agent
       // reports as a saved edit.
-      if (Object.keys(body).length === 0) {
+      if (Object.values(body).every((value) => value === undefined)) {
         return error(
           "No updatable fields were provided, so nothing was changed. To edit the post's body, call get-post to read its `json`, edit that document, and send it back as `bodyJson` — this tool does not accept `markdown`."
         );
