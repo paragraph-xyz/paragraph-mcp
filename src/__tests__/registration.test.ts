@@ -35,6 +35,33 @@ describe("tool registration", () => {
     ]);
   });
 
+  // Gemini rejects an empty string in `enum` (and `const`, which clients
+  // convert to a one-value enum) with a 400 that fails the whole request, not
+  // just this tool. `.or(z.literal(""))` produces exactly that. Accept "" with
+  // a plain string schema and treat it as omitted in the handler instead.
+  it("no input schema allows only an empty string via enum or const", async () => {
+    ({ client } = await createTestClient());
+    const { tools } = await client.listTools();
+    const offenders: string[] = [];
+    const walk = (node: unknown, path: string) => {
+      if (Array.isArray(node)) {
+        node.forEach((item, i) => walk(item, `${path}[${i}]`));
+        return;
+      }
+      if (node === null || typeof node !== "object") return;
+      const record = node as Record<string, unknown>;
+      if (record.const === "") offenders.push(`${path}.const`);
+      if (Array.isArray(record.enum) && record.enum.includes("")) {
+        offenders.push(`${path}.enum`);
+      }
+      for (const [key, value] of Object.entries(record)) {
+        walk(value, `${path}.${key}`);
+      }
+    };
+    for (const tool of tools) walk(tool.inputSchema, tool.name);
+    expect(offenders).toEqual([]);
+  });
+
   it("every tool has a description", async () => {
     ({ client } = await createTestClient());
     const { tools } = await client.listTools();

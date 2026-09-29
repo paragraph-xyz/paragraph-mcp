@@ -4,7 +4,7 @@ import type { PublicationIdentifier } from "@paragraph-com/sdk";
 import { ParagraphAPI } from "@paragraph-com/sdk";
 import {
   getPublicationByIdParams,
-  getPublicationBySlugParams,
+  getPublicationBySlugPathSlugMax,
   getPublicationByDomainParams,
   updatePublicationBody,
   updatePublicationParams,
@@ -23,9 +23,13 @@ export function registerPublicationTools(
         "Get metadata about a Paragraph publication by ID, slug, or custom domain. Provide exactly one identifier and omit the other fields. Empty strings are treated as omitted.",
       inputSchema: {
         id: getPublicationByIdParams.shape.publicationId.optional(),
-        // Models may fill unused identifiers with empty strings.
-        slug: getPublicationBySlugParams.shape.slug
-          .or(z.literal(""))
+        // Models may fill unused identifiers with empty strings, so the
+        // schema accepts "" and the handler treats it as omitted. Don't
+        // express that as `.or(z.literal(""))`: Gemini rejects the resulting
+        // `enum: [""]` and fails every request that carries this tool.
+        slug: z
+          .string()
+          .max(getPublicationBySlugPathSlugMax)
           .optional()
           .describe("Publication slug"),
         domain: getPublicationByDomainParams.shape.domain.optional(),
