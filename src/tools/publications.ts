@@ -1,4 +1,5 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { z } from "zod";
 import type { PublicationIdentifier } from "@paragraph-com/sdk";
 import { ParagraphAPI } from "@paragraph-com/sdk";
 import {
@@ -19,10 +20,14 @@ export function registerPublicationTools(
     {
       title: "Get publication",
       description:
-        "Get metadata about a Paragraph publication by ID, slug, or custom domain",
+        "Get metadata about a Paragraph publication by ID, slug, or custom domain. Provide exactly one identifier and omit the other fields. Empty strings are treated as omitted.",
       inputSchema: {
         id: getPublicationByIdParams.shape.publicationId.optional(),
-        slug: getPublicationBySlugParams.shape.slug.optional(),
+        // Models may fill unused identifiers with empty strings.
+        slug: getPublicationBySlugParams.shape.slug
+          .or(z.literal(""))
+          .optional()
+          .describe("Publication slug"),
         domain: getPublicationByDomainParams.shape.domain.optional(),
       },
       annotations: {
@@ -33,9 +38,7 @@ export function registerPublicationTools(
       },
     },
     async (params) => {
-      const provided = [params.id, params.slug, params.domain].filter(
-        (v) => v !== undefined
-      );
+      const provided = [params.id, params.slug, params.domain].filter(Boolean);
       if (provided.length !== 1) {
         return error("Provide exactly one of id, slug, or domain");
       }
