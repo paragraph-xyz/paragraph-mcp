@@ -248,6 +248,33 @@ describe("update-post newsletter-only delivery and canonical URL", () => {
     expect(ctx.updateCalls[0]).toEqual({ id: "p_1", categories: ["Featured"] });
   });
 
+  it("drops the blanks a model fills into every optional field", async () => {
+    const ctx = await setup();
+    client = ctx.client;
+
+    const res = await client.callTool({
+      name: "update-post",
+      arguments: {
+        id: "p_1",
+        categories: ["Featured"],
+        title: "",
+        subtitle: "",
+        postPreview: "",
+        bodyJson: "",
+        publishedAt: 0,
+        scheduledAt: 0,
+        sendNewsletter: false,
+      },
+    });
+
+    expect(res.isError).toBeFalsy();
+    expect(ctx.updateCalls[0]).toEqual({
+      id: "p_1",
+      categories: ["Featured"],
+      sendNewsletter: false,
+    });
+  });
+
   it("rejects an update whose only field is canonicalUrl: \"\"", async () => {
     const ctx = await setup();
     client = ctx.client;
