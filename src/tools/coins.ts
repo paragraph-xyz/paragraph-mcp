@@ -19,10 +19,11 @@ export function registerCoinTools(
     {
       title: "Get coin",
       description:
-        "Get coin/token metadata by ID or contract address, or list popular coins",
+        "Get coin/token metadata by ID or contract address, or list popular coins. Provide exactly one of id, contractAddress, or popular=true, and omit the other fields. Empty strings are treated as omitted.",
       inputSchema: {
         id: getCoinParams.shape.id.optional().describe("Coin ID"),
         contractAddress: getCoinByContractParams.shape.contractAddress
+          .or(z.literal(""))
           .optional()
           .describe("On-chain contract address"),
         popular: z
@@ -38,8 +39,8 @@ export function registerCoinTools(
       },
     },
     async (params) => {
-      const hasId = params.id !== undefined;
-      const hasContract = params.contractAddress !== undefined;
+      const hasId = !!params.id;
+      const hasContract = !!params.contractAddress;
       const hasPopular = params.popular === true;
       const count = [hasId, hasContract, hasPopular].filter(Boolean).length;
 
