@@ -36,7 +36,7 @@ Requires API key.
 const UPDATE_CONTENT_DESCRIPTION = `
 Rename a piece of content, replace its body, or both. Requires API key.
 
-**Read before you write.** Call \`get-content\` first: the draft may have changed in the app since you last saw it, and \`body\` replaces the artifact entirely — in the same shape the kind takes on create. Send the whole thing, not just the part that changed. For a saved rich newsletter, preserve its complete \`bodyJson\` document; a Markdown rewrite can lose formatting and media. Never provide Markdown \`body\` together with \`bodyJson\`. Creation or editing does not approve delivery. Media already attached to the draft is the one exception: you can't send it back, so it's carried over rather than dropped.
+**Read before you write.** Call \`get-content\` first: the draft may have changed in the app since you last saw it, and \`body\` replaces the artifact entirely — in the same shape the kind takes on create. Send the whole thing, not just the part that changed. For a saved rich newsletter, preserve its complete \`bodyJson\` document; a Markdown rewrite can lose formatting and media. Never provide Markdown \`body\` together with \`bodyJson\`. Creation or editing does not approve delivery. Existing X and LinkedIn attachments are carried over because this tool does not accept social media attachments. Newsletter image and video nodes must remain in the complete \`bodyJson\` document you send.
 
 **Scheduled pieces are locked.** If a send is queued or already running, its words go out exactly as written, so an edit to \`body\` is refused with an explanation. Tell the user to cancel the schedule in the app first. Renaming is always allowed — a title isn't published anywhere.
 
