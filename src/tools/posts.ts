@@ -68,13 +68,12 @@ const authorIdsSchema = z
 /**
  * Some models fill every optional field with "", 0 or [] instead of omitting
  * it; forwarding those would blank a post's title, body, tags, or date.
- * An explicitly empty imageAlt is the supported operation for clearing it.
  */
 function dropBlankArgs<T extends Record<string, unknown>>(params: T): T {
   return Object.fromEntries(
     Object.entries(params).filter(
-      ([key, value]) =>
-        (value !== "" || key === "imageAlt") &&
+      ([, value]) =>
+        value !== "" &&
         value !== 0 &&
         !(Array.isArray(value) && value.length === 0)
     )
@@ -429,7 +428,9 @@ export function registerPostTools(
         imageUrl: updatePostBody.shape.imageUrl.describe(
           "URL of an image to set as the post's cover/hero image. The URL is fetched server-side, re-hosted on Paragraph's CDN, and a placeholder is generated. Pass clearImage instead to remove the existing cover."
         ),
-        imageAlt: updatePostBody.shape.imageAlt,
+        imageAlt: updatePostBody.shape.imageAlt.describe(
+          "Alternative text describing the cover image. Set it with imageUrl, or on its own to re-describe the existing cover. Use null to clear it. Omit when not changing the description; empty placeholders are ignored. Ignored when the post has no cover."
+        ),
         clearImage: updatePostBody.shape.clearImage.describe(
           "Set to true to remove the post's existing cover/hero image. Ignored if imageUrl is also provided. Confirm with the user before clearing."
         ),

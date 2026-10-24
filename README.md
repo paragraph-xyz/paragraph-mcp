@@ -147,7 +147,8 @@ npx @paragraph-com/mcp --http --port 3100
 
 Set `imageAlt` alongside `imageUrl` to describe the cover image. On
 `update-post`, `imageAlt` alone changes the existing cover's description without
-replacing the image or body. Use `null` or an empty string to clear the alt text.
+replacing the image or body. Use `null` to clear the alt text. Empty optional
+placeholders are ignored so unrelated edits preserve the existing description.
 
 ### Content
 Drafted short-form content — X posts and threads, LinkedIn posts, one-off emails, and X Articles. These tools draft only; the writer sends the piece from the Paragraph app.
