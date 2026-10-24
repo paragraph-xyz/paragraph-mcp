@@ -26,10 +26,14 @@ async function setup() {
   const api = {
     content: {
       create: vi.fn(record("create", piece)),
-      list: vi.fn(record("list", { items: [piece], pagination: { hasMore: false } })),
+      list: vi.fn(
+        record("list", { items: [piece], pagination: { hasMore: false } }),
+      ),
       get: vi.fn(record("get", { ...piece, body: { text: "hi" } })),
       update: vi.fn(record("update", piece)),
-      archive: vi.fn(record("archive", { ...piece, archivedAt: "2026-08-19T00:00:00Z" })),
+      archive: vi.fn(
+        record("archive", { ...piece, archivedAt: "2026-08-19T00:00:00Z" }),
+      ),
       restore: vi.fn(record("restore", { ...piece, archivedAt: null })),
     },
   } as unknown as ParagraphAPI;
@@ -37,7 +41,8 @@ async function setup() {
   const server = new McpServer({ name: "test", version: "0.0.0" });
   registerContentTools(server, () => api);
 
-  const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
+  const [clientTransport, serverTransport] =
+    InMemoryTransport.createLinkedPair();
   const client = new Client({ name: "test-client", version: "1.0.0" });
   await server.connect(serverTransport);
   await client.connect(clientTransport);
@@ -47,7 +52,10 @@ async function setup() {
 
 describe("content tools", () => {
   let client: Client | undefined;
-  afterEach(async () => { await client?.close(); client = undefined; });
+  afterEach(async () => {
+    await client?.close();
+    client = undefined;
+  });
 
   it("create-content forwards kind, title, and body", async () => {
     const ctx = await setup();
@@ -70,6 +78,68 @@ describe("content tools", () => {
         body: { tweets: ["One.", "Two."] },
       },
     ]);
+  });
+
+  it("preserves the complete rich newsletter through real create/update protocol schemas", async () => {
+    const ctx = await setup();
+    client = ctx.client;
+    const body = {
+      subject: "Exact QA newsletter",
+      preheader: "Preserve all formatting",
+      bodyJson: {
+        type: "doc",
+        content: [
+          {
+            type: "paragraph",
+            content: [
+              { type: "text", text: "Keep this.", marks: [{ type: "bold" }] },
+            ],
+          },
+          {
+            type: "image",
+            attrs: {
+              src: "https://example.com/image.png",
+              alt: "Blue",
+              width: 600,
+            },
+          },
+          {
+            type: "table",
+            content: [
+              {
+                type: "tableRow",
+                content: [
+                  {
+                    type: "tableCell",
+                    attrs: { colspan: 2 },
+                    content: [
+                      {
+                        type: "paragraph",
+                        content: [{ type: "text", text: "Merged cell" }],
+                      },
+                    ],
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      },
+    };
+    const created = await client.callTool({
+      name: "create-content",
+      arguments: { kind: "newsletter", title: "QA", body },
+    });
+    const updated = await client.callTool({
+      name: "update-content",
+      arguments: { contentId: "c_1", body },
+    });
+    expect(created.isError).toBeFalsy();
+    expect(updated.isError).toBeFalsy();
+    expect(ctx.calls.create).toEqual([
+      { kind: "newsletter", title: "QA", body },
+    ]);
+    expect(ctx.calls.update).toEqual([{ id: "c_1", body }]);
   });
 
   it("list-content forwards kind and status filters", async () => {

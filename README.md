@@ -285,3 +285,5 @@ This MCP server connects to the [Paragraph](https://paragraph.com) API on your b
 ## License
 
 MIT
+
+For newsletter drafts, `create-content` and `update-content` accept either Markdown `body.body` or a complete rich editor document in `body.bodyJson`, never both. Read the saved draft first and preserve its full rich document, subject, preheader, and media when editing. A Markdown rewrite can lose rich formatting. Creation and edits do not approve delivery; X/LinkedIn media attachments still need the app.
