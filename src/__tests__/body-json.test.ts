@@ -99,7 +99,10 @@ describe("bodyJson on update-post / create-post (PAR-9429)", () => {
 
     expect(res.isError).toBeFalsy();
     expect(ctx.updateCalls).toHaveLength(1);
-    expect(ctx.updateCalls[0]).toEqual({ id: "p_1", bodyJson: DOC_WITH_BUTTON });
+    expect(ctx.updateCalls[0]).toEqual({
+      id: "p_1",
+      bodyJson: DOC_WITH_BUTTON,
+    });
   });
 
   it("update-post does not advertise a markdown param (PAR-9923)", async () => {
@@ -174,6 +177,69 @@ describe("bodyJson on update-post / create-post (PAR-9429)", () => {
     });
   });
 
+  it("advertises and forwards cover alt text when creating a draft", async () => {
+    const ctx = await setup();
+    client = ctx.client;
+    const { tools } = await client.listTools();
+    for (const name of ["create-post", "update-post"]) {
+      expect(
+        tools.find((tool) => tool.name === name)?.inputSchema.properties
+      ).toHaveProperty("imageAlt");
+    }
+
+    const res = await client.callTool({
+      name: "create-post",
+      arguments: {
+        title: "Cover QA",
+        bodyJson: DOC_WITH_BUTTON,
+        imageUrl: "https://example.com/cover.png",
+        imageAlt: "A blue circle on white.",
+      },
+    });
+
+    expect(res.isError).toBeFalsy();
+    expect(ctx.createCalls).toEqual([
+      expect.objectContaining({
+        bodyJson: DOC_WITH_BUTTON,
+        imageUrl: "https://example.com/cover.png",
+        imageAlt: "A blue circle on white.",
+      }),
+    ]);
+  });
+
+  it.each(["A red circle on white.", null, ""])(
+    "updates or clears only cover alt text (%j)",
+    async (imageAlt) => {
+      const ctx = await setup({ json: DOC_WITH_BUTTON });
+      client = ctx.client;
+      const res = await client.callTool({
+        name: "update-post",
+        arguments: { id: "p_1", imageAlt },
+      });
+
+      expect(res.isError).toBeFalsy();
+      expect(ctx.updateCalls).toEqual([{ id: "p_1", imageAlt }]);
+      expect(ctx.createCalls).toHaveLength(0);
+    }
+  );
+
+  it("rejects oversized cover alt text before any API write", async () => {
+    const ctx = await setup();
+    client = ctx.client;
+    for (const [name, args] of [
+      ["create-post", { title: "QA", bodyJson: DOC_PLAIN }],
+      ["update-post", { id: "p_1" }],
+    ] as const) {
+      const res = await client.callTool({
+        name,
+        arguments: { ...args, imageAlt: "x".repeat(1001) },
+      });
+      expect(res.isError).toBe(true);
+    }
+    expect(ctx.createCalls).toHaveLength(0);
+    expect(ctx.updateCalls).toHaveLength(0);
+  });
+
   it("create-post rejects markdown + bodyJson together", async () => {
     const ctx = await setup();
     client = ctx.client;
@@ -194,7 +260,12 @@ describe("bodyJson on update-post / create-post (PAR-9429)", () => {
 
     const res = await client.callTool({
       name: "create-post",
-      arguments: { title: "T", markdown: "", bodyJson: DOC_PLAIN, subtitle: "" },
+      arguments: {
+        title: "T",
+        markdown: "",
+        bodyJson: DOC_PLAIN,
+        subtitle: "",
+      },
     });
 
     expect(res.isError).toBeFalsy();

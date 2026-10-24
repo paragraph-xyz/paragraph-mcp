@@ -145,6 +145,10 @@ npx @paragraph-com/mcp --http --port 3100
 - **delete-post** — Delete a post
 - **send-test-email** — Send a test newsletter for a draft
 
+Set `imageAlt` alongside `imageUrl` to describe the cover image. On
+`update-post`, `imageAlt` alone changes the existing cover's description without
+replacing the image or body. Use `null` or an empty string to clear the alt text.
+
 ### Content
 Drafted short-form content — X posts and threads, LinkedIn posts, one-off emails, and X Articles. These tools draft only; the writer sends the piece from the Paragraph app.
 - **create-content** — Save a piece to your publication's library

@@ -68,12 +68,13 @@ const authorIdsSchema = z
 /**
  * Some models fill every optional field with "", 0 or [] instead of omitting
  * it; forwarding those would blank a post's title, body, tags, or date.
+ * An explicitly empty imageAlt is the supported operation for clearing it.
  */
 function dropBlankArgs<T extends Record<string, unknown>>(params: T): T {
   return Object.fromEntries(
     Object.entries(params).filter(
-      ([, value]) =>
-        value !== "" &&
+      ([key, value]) =>
+        (value !== "" || key === "imageAlt") &&
         value !== 0 &&
         !(Array.isArray(value) && value.length === 0)
     )
@@ -184,9 +185,10 @@ export function registerPostTools(
         "Get a single post by ID, or by publication slug + post slug",
       inputSchema: {
         id: getPostByIdParams.shape.postId.optional().describe("Post ID"),
-        publicationSlug: getPostByPublicationSlugAndPostSlugParams.shape.publicationSlug
-          .optional()
-          .describe("Publication slug (use with postSlug)"),
+        publicationSlug:
+          getPostByPublicationSlugAndPostSlugParams.shape.publicationSlug
+            .optional()
+            .describe("Publication slug (use with postSlug)"),
         postSlug: getPostByPublicationSlugAndPostSlugParams.shape.postSlug
           .optional()
           .describe("Post slug (use with publicationSlug)"),
@@ -215,9 +217,7 @@ export function registerPostTools(
         return error("Both publicationSlug and postSlug are required together");
       }
       if (!hasId && !hasSlugs) {
-        return error(
-          "Provide either id, or both publicationSlug and postSlug"
-        );
+        return error("Provide either id, or both publicationSlug and postSlug");
       }
 
       const api = getApi();
@@ -253,16 +253,17 @@ export function registerPostTools(
       description:
         "List posts from a publication by publication ID, or list your own posts (requires API key). Supports pagination and status filtering. Tip: if you only need the total count, set limit to 1 — the response includes pagination.total. Start with a small limit and increase only if needed, as large limits may produce oversized responses.",
       inputSchema: {
-        publicationId: getPostsParams.shape.publicationId.optional().describe(
-          "Publication ID to list posts from. Omit to list your own posts (requires API key)."
-        ),
+        publicationId: getPostsParams.shape.publicationId
+          .optional()
+          .describe(
+            "Publication ID to list posts from. Omit to list your own posts (requires API key)."
+          ),
         status: listOwnPostsQueryParams.shape.status.describe(
           "Filter by status (only for own posts)"
         ),
-        limit: getPostsQueryParams.shape.limit
-          .describe(
-            "Number of posts to return (default: 10). Keep this small to avoid oversized responses — use pagination to retrieve more."
-          ),
+        limit: getPostsQueryParams.shape.limit.describe(
+          "Number of posts to return (default: 10). Keep this small to avoid oversized responses — use pagination to retrieve more."
+        ),
         cursor: getPostsQueryParams.shape.cursor,
         includeContent: getPostsQueryParams.shape.includeContent
           .unwrap()
@@ -328,6 +329,7 @@ export function registerPostTools(
         subtitle: createPostBody.shape.subtitle,
         slug: createPostBody.shape.slug,
         imageUrl: createPostBody.shape.imageUrl,
+        imageAlt: createPostBody.shape.imageAlt,
         postPreview: createPostBody.shape.postPreview.describe(
           POST_PREVIEW_DESCRIPTION
         ),
@@ -386,7 +388,9 @@ export function registerPostTools(
       inputSchema: {
         id: updatePostParams.shape.postId
           .optional()
-          .describe("Post ID. Provide id or slug; if both are given, id is used."),
+          .describe(
+            "Post ID. Provide id or slug; if both are given, id is used."
+          ),
         slug: updatePostBySlugParams.shape.slug
           .optional()
           .describe(
@@ -425,6 +429,7 @@ export function registerPostTools(
         imageUrl: updatePostBody.shape.imageUrl.describe(
           "URL of an image to set as the post's cover/hero image. The URL is fetched server-side, re-hosted on Paragraph's CDN, and a placeholder is generated. Pass clearImage instead to remove the existing cover."
         ),
+        imageAlt: updatePostBody.shape.imageAlt,
         clearImage: updatePostBody.shape.clearImage.describe(
           "Set to true to remove the post's existing cover/hero image. Ignored if imageUrl is also provided. Confirm with the user before clearing."
         ),
@@ -494,7 +499,9 @@ export function registerPostTools(
         "Permanently delete a post by ID or slug. This action is irreversible. Always confirm with the user before deleting. Requires API key.",
       inputSchema: {
         id: deletePostParams.shape.postId.optional().describe("Post ID"),
-        slug: deletePostBySlugParams.shape.slug.optional().describe("Post slug"),
+        slug: deletePostBySlugParams.shape.slug
+          .optional()
+          .describe("Post slug"),
       },
       annotations: {
         readOnlyHint: false,
