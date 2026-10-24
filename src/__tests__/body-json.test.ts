@@ -207,7 +207,7 @@ describe("bodyJson on update-post / create-post (PAR-9429)", () => {
     ]);
   });
 
-  it.each(["A red circle on white.", null, ""])(
+  it.each(["A red circle on white.", null])(
     "updates or clears only cover alt text (%j)",
     async (imageAlt) => {
       const ctx = await setup({ json: DOC_WITH_BUTTON });
@@ -222,6 +222,34 @@ describe("bodyJson on update-post / create-post (PAR-9429)", () => {
       expect(ctx.createCalls).toHaveLength(0);
     }
   );
+
+  it("ignores blank alt placeholders during body edits and refuses blank-only edits", async () => {
+    const ctx = await setup({
+      json: DOC_WITH_BUTTON,
+      imageAlt: "Keep the existing accessible description.",
+    });
+    client = ctx.client;
+    const changed = await client.callTool({
+      name: "update-post",
+      arguments: {
+        id: "p_1",
+        title: "Updated title",
+        bodyJson: DOC_WITH_BUTTON,
+        imageAlt: "",
+      },
+    });
+    expect(changed.isError).toBeFalsy();
+    expect(ctx.updateCalls).toEqual([
+      { id: "p_1", title: "Updated title", bodyJson: DOC_WITH_BUTTON },
+    ]);
+
+    const blankOnly = await client.callTool({
+      name: "update-post",
+      arguments: { id: "p_1", imageAlt: "" },
+    });
+    expect(blankOnly.isError).toBe(true);
+    expect(ctx.updateCalls).toHaveLength(1);
+  });
 
   it("rejects oversized cover alt text before any API write", async () => {
     const ctx = await setup();
