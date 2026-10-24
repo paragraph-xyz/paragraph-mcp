@@ -21,12 +21,12 @@ Save a finished piece of short-form content to the publication's library — an 
 **The body takes the shape its kind uses:**
 - \`tweet\` — \`text\` for a single post, or \`tweets\` for a thread (never both). One entry per tweet, in posting order, each at most 280 characters. Never concatenate a thread into one entry.
 - \`linkedin\` — \`text\`.
-- \`newsletter\` — \`subject\`, \`body\`, and an optional \`preheader\`.
+- \`newsletter\` — \`subject\`, either Markdown \`body\` or a complete rich \`bodyJson\` document, and an optional \`preheader\`. Never provide both body formats.
 - \`x_article\` — \`title\` (the headline X publishes), \`body\` as CommonMark markdown, and an optional \`canonicalUrl\`.
 
 It's validated the same way the Paragraph app validates it, so a thread over 280 characters an entry, or an Article missing its headline, comes back with the same explanation the writer would see in the app. Fix the draft and retry.
 
-**Text only.** Media has to be uploaded to X or LinkedIn first, which the API can't do yet — sending \`media\` is rejected. If the user wants an image, tell them to add it to the draft in the app.
+**Social attachments.** X and LinkedIn media still need the app — sending \`media\` is rejected. Rich newsletters accept the same validated \`bodyJson\` document as the email editor.
 
 **Group it with the post it came from.** When this piece is a version of a Paragraph post — a thread drawn from it, a LinkedIn version, the newsletter — call \`create-post-content-bucket\` with that post's id and pass the \`bucketId\` it returns. The writer then sees the post and everything made from it as one row under Content instead of unrelated drafts. Omit it for standalone work.
 
@@ -36,7 +36,7 @@ Requires API key.
 const UPDATE_CONTENT_DESCRIPTION = `
 Rename a piece of content, replace its body, or both. Requires API key.
 
-**Read before you write.** Call \`get-content\` first: the draft may have changed in the app since you last saw it, and \`body\` replaces the artifact entirely — in the same shape the kind takes on create. Send the whole thing, not just the part that changed. Media already attached to the draft is the one exception: you can't send it back, so it's carried over rather than dropped.
+**Read before you write.** Call \`get-content\` first: the draft may have changed in the app since you last saw it, and \`body\` replaces the artifact entirely — in the same shape the kind takes on create. Send the whole thing, not just the part that changed. For a saved rich newsletter, preserve its complete \`bodyJson\` document; a Markdown rewrite can lose formatting and media. Never provide Markdown \`body\` together with \`bodyJson\`. Creation or editing does not approve delivery. Existing X and LinkedIn attachments are carried over because this tool does not accept social media attachments. Newsletter image and video nodes must remain in the complete \`bodyJson\` document you send.
 
 **Scheduled pieces are locked.** If a send is queued or already running, its words go out exactly as written, so an edit to \`body\` is refused with an explanation. Tell the user to cancel the schedule in the app first. Renaming is always allowed — a title isn't published anywhere.
 
@@ -47,7 +47,7 @@ Provide at least one of \`title\`, \`body\`, or \`bucketId\`.
 
 export function registerContentTools(
   server: McpServer,
-  getApi: () => ParagraphAPI
+  getApi: () => ParagraphAPI,
 ) {
   server.registerTool(
     "create-content",
@@ -75,7 +75,7 @@ export function registerContentTools(
       } catch (err) {
         return toError(err);
       }
-    }
+    },
   );
 
   server.registerTool(
@@ -88,7 +88,7 @@ export function registerContentTools(
         kind: listContentQueryParams.shape.kind,
         status: listContentQueryParams.shape.status,
         limit: listContentQueryParams.shape.limit.describe(
-          "Number of pieces to return (1-50, default: 20). Keep this small to avoid oversized responses — use pagination to retrieve more."
+          "Number of pieces to return (1-50, default: 20). Keep this small to avoid oversized responses — use pagination to retrieve more.",
         ),
         cursor: listContentQueryParams.shape.cursor,
       },
@@ -112,7 +112,7 @@ export function registerContentTools(
       } catch (err) {
         return toError(err);
       }
-    }
+    },
   );
 
   server.registerTool(
@@ -139,7 +139,7 @@ export function registerContentTools(
       } catch (err) {
         return toError(err);
       }
-    }
+    },
   );
 
   server.registerTool(
@@ -175,7 +175,7 @@ export function registerContentTools(
       } catch (err) {
         return toError(err);
       }
-    }
+    },
   );
 
   server.registerTool(
@@ -202,7 +202,7 @@ export function registerContentTools(
       } catch (err) {
         return toError(err);
       }
-    }
+    },
   );
 
   server.registerTool(
@@ -210,7 +210,7 @@ export function registerContentTools(
     {
       title: "Restore content",
       description:
-        "Bring an archived piece back into the library. Suggestions dismissed when it was archived stay dismissed — the writer gets the draft back, not the to-do items telling them to ship it. Use `list-content` with `status: \"archived\"` to find the piece. Requires API key.",
+        'Bring an archived piece back into the library. Suggestions dismissed when it was archived stay dismissed — the writer gets the draft back, not the to-do items telling them to ship it. Use `list-content` with `status: "archived"` to find the piece. Requires API key.',
       inputSchema: {
         contentId: restoreContentParams.shape.contentId,
       },
@@ -229,6 +229,6 @@ export function registerContentTools(
       } catch (err) {
         return toError(err);
       }
-    }
+    },
   );
 }
