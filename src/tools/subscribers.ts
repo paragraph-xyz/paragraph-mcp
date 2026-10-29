@@ -68,7 +68,7 @@ export function registerSubscriberTools(
         } catch (err) {
           if (err instanceof ParagraphApiError && err.status === 404) {
             return error(
-              `Invalid publication ID "${params.publicationId}". Call \`get-me\` to obtain the authenticated publication's ID, or use \`search-blogs\` to look one up by name or slug.`
+              `Invalid publication ID "${params.publicationId}". Call \`get-me\` to obtain the authenticated publication's ID.`
             );
           }
           throw err;

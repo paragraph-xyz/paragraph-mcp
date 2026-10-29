@@ -5,7 +5,6 @@ import { registerPostTools } from "./posts.js";
 import { registerSubscriberTools } from "./subscribers.js";
 import { registerUserTools } from "./users.js";
 import { registerCoinTools } from "./coins.js";
-import { registerSearchTools } from "./search.js";
 import { registerFeedTools } from "./feed.js";
 import { registerMeTools } from "./me.js";
 import { registerAnalyticsTools } from "./analytics.js";
@@ -21,7 +20,6 @@ export type Toolset =
   | "subscribers"
   | "users"
   | "coins"
-  | "search"
   | "feed"
   | "me"
   | "analytics"
@@ -35,7 +33,6 @@ export const ALL_TOOLSETS: Toolset[] = [
   "subscribers",
   "users",
   "coins",
-  "search",
   "feed",
   "me",
   "analytics",
@@ -53,7 +50,6 @@ const toolsetRegistrars: Record<
   subscribers: registerSubscriberTools,
   users: registerUserTools,
   coins: registerCoinTools,
-  search: registerSearchTools,
   feed: registerFeedTools,
   me: registerMeTools,
   analytics: registerAnalyticsTools,

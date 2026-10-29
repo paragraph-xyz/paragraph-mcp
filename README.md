@@ -183,11 +183,6 @@ One identity for a post and everything made out of it — the post, the thread d
 - **get-coin** — Get coin metadata or list popular coins
 - **list-coin-holders** — Get coin holders
 
-### Search
-- **search-posts** — Search posts
-- **search-blogs** — Search publications
-- **search-coins** — Search coins
-
 ### Feed
 - **get-feed** — Get the curated platform feed
 
@@ -206,18 +201,12 @@ One identity for a post and everything made out of it — the post, the thread d
 Only expose the tools your agent needs:
 
 ```bash
-npx @paragraph-com/mcp --toolsets posts,search
+npx @paragraph-com/mcp --toolsets posts,subscribers
 ```
 
-Available toolsets: `posts`, `content`, `buckets`, `publications`, `subscribers`, `users`, `coins`, `search`, `feed`, `me`, `analytics`, `emails`
+Available toolsets: `posts`, `content`, `buckets`, `publications`, `subscribers`, `users`, `coins`, `feed`, `me`, `analytics`, `emails`
 
 ## Examples
-
-### Search and summarize posts on a topic
-
-**Prompt:** "Search for posts about onchain governance and give me a summary of the top results"
-
-The MCP server calls `search-posts` with the query. Claude receives the matching posts and synthesizes a summary of the key themes, authors, and publications.
 
 ### Draft and publish a blog post
 

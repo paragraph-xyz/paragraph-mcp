@@ -10,7 +10,6 @@ const ALL_TOOL_NAMES = [
   "list-subscribers", "get-subscriber-count", "add-subscriber", "remove-subscriber",
   "get-user",
   "get-coin", "list-coin-holders",
-  "search-posts", "search-blogs", "search-coins",
   "get-feed",
   "get-me",
   "analytics-query", "analytics-schema",
@@ -21,17 +20,17 @@ describe("tool registration", () => {
   let client: Client;
   afterEach(async () => { await client?.close(); });
 
-  it("registers all 33 tools", async () => {
+  it("registers all 30 tools", async () => {
     ({ client } = await createTestClient());
     const { tools } = await client.listTools();
     expect(tools.map((t) => t.name).sort()).toEqual([...ALL_TOOL_NAMES].sort());
   });
 
   it("filters to only requested toolsets", async () => {
-    ({ client } = await createTestClient(["search", "me"]));
+    ({ client } = await createTestClient(["coins", "me"]));
     const { tools } = await client.listTools();
     expect(tools.map((t) => t.name)).toEqual([
-      "search-posts", "search-blogs", "search-coins", "get-me",
+      "get-coin", "list-coin-holders", "get-me",
     ]);
   });
 

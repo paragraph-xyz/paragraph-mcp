@@ -34,7 +34,20 @@ function parseArgs() {
       port = parsed;
       i++;
     } else if (arg === "--toolsets" && args[i + 1]) {
-      const names = args[i + 1].split(",").filter(Boolean);
+      let names = args[i + 1].split(",").filter(Boolean);
+      // Platform-wide search was removed from the Paragraph API. Skip the old
+      // toolset name instead of refusing to start, so existing configs that
+      // list it keep working.
+      if (names.includes("search")) {
+        console.error(
+          'The "search" toolset was removed (Paragraph no longer offers platform-wide search). Ignoring it.'
+        );
+        names = names.filter((n) => n !== "search");
+        if (names.length === 0) {
+          console.error(`No toolsets left to enable.\nAvailable: ${ALL_TOOLSETS.join(", ")}`);
+          process.exit(1);
+        }
+      }
       const invalid = names.filter(
         (n) => !ALL_TOOLSETS.includes(n as Toolset)
       );
@@ -66,8 +79,8 @@ Examples:
   # stdio (for Claude Desktop, Cursor, etc.)
   paragraph-mcp
 
-  # HTTP with only posts and search tools
-  paragraph-mcp --http --toolsets posts,search
+  # HTTP with only posts and subscribers tools
+  paragraph-mcp --http --toolsets posts,subscribers
 
   # Claude Desktop config (claude_desktop_config.json)
   {
