@@ -39,7 +39,7 @@ export function toError(err: unknown) {
     if (err.status === 404) {
       const detail = serverMsg ? `${serverMsg}. ` : "";
       return error(
-        `Not found. ${detail}Verify the identifier — call the matching list/search tool (e.g. list-posts, search-posts, list-subscribers, search-blogs) to find valid values.`
+        `Not found. ${detail}Verify the identifier — call the matching list tool (e.g. list-posts, list-subscribers) to find valid values.`
       );
     }
     if (err.status === 429) {

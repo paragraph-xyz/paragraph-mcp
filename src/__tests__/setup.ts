@@ -22,7 +22,6 @@ function noopApi() {
     subscribers: { get: vi.fn(list), getCount: vi.fn(list), create: vi.fn(list) },
     users: { get: vi.fn(chainable) },
     coins: { get: vi.fn(chainable), getHolders: vi.fn(list) },
-    search: { posts: vi.fn(list), blogs: vi.fn(list), coins: vi.fn(list) },
     feed: { get: vi.fn(list) },
     me: { get: vi.fn(list) },
   };
